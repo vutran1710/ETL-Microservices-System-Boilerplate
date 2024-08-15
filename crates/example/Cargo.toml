@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 database = { workspace = true, features = ["tier_1"] }
+clap = { workspace = true }
+eyre = { workspace = true }

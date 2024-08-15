@@ -1,8 +1,15 @@
-use database::tier_1::ExampleTable;
+use clap::Parser;
+// use database::tier_1::Post;
 
-pub fn main() {
-    let table = ExampleTable {
-        id: "example_id".to_string(),
-    };
-    println!("{:?}", table);
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    source_db: String,
+}
+
+pub fn main() -> eyre::Result<()> {
+    let Args { source_db } = Args::parse();
+    let _conn = database::connection(&source_db);
+    Ok(())
 }

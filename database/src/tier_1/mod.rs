@@ -1,9 +1,12 @@
-use sqlx::migrate::Migrator;
-use sqlx::FromRow;
+use diesel::prelude::*;
+mod schema;
 
-pub static MIGRATOR: Migrator = sqlx::migrate!("./migrations/tier_1");
-
-#[derive(Debug, FromRow)]
-pub struct ExampleTable {
-    pub id: String,
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = schema::posts)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Post {
+    pub id: i32,
+    pub title: String,
+    pub body: String,
+    pub published: bool,
 }
