@@ -1,0 +1,11 @@
+[workspace]
+
+members = ["etl-app"]
+
+[workspace.dependencies]
+eyre = "0.6.12"
+kanal = "0.1.0-pre8"
+rayon = "1.10.0"
+serde = { version = "1.0.207", features = ["derive"] }
+tokio = { version = "1.39.2", features = ["full"] }
+tokio-retry = "0.3.0"
