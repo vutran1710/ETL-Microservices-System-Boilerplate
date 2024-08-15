@@ -1,7 +1,11 @@
+use common::messages::Message;
 #[cfg(feature = "pubsub")]
-use google_cloud_pubsub::client::{Client as PubSubClient, ClientConfig as PubSubClientConfig};
+use google_cloud_pubsub::client::Client as PubSubClient;
+#[cfg(feature = "pubsub")]
+use google_cloud_pubsub::client::ClientConfig as PubSubClientConfig;
 
 use clap::Parser;
+use kanal::AsyncSender;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -54,7 +58,7 @@ impl MessageQueue {
         unimplemented!("No message queue client specified")
     }
 
-    pub async fn run(&self) -> eyre::Result<()> {
+    pub async fn run(&self, _message_sender: AsyncSender<Message>) -> eyre::Result<()> {
         match self {
             #[cfg(feature = "pubsub")]
             MessageQueue::PubSub(_client) => {

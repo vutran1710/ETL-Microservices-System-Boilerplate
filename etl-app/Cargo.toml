@@ -7,6 +7,7 @@ edition = "2021"
 eyre = { workspace = true }
 kanal = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true }
 tokio-retry = { workspace = true }
 warp = { workspace = true }
@@ -16,6 +17,9 @@ env_logger = { workspace = true }
 
 # Message Queue
 google-cloud-pubsub = { workspace = true, optional = true }
+
+# Libs
+common = { workspace = true }
 
 # ETL crate to include
 example = { workspace = true, optional = true }
