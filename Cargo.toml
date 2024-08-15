@@ -9,6 +9,7 @@ rayon = "1.10.0"
 serde = { version = "1.0.207", features = ["derive"] }
 tokio = { version = "1.39.2", features = ["full"] }
 tokio-retry = "0.3.0"
+clap = { version = "4.5.15", features = ["env", "derive"] }
 
 # Packages
 database = { path = "database" }
