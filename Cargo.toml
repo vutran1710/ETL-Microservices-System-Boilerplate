@@ -18,6 +18,7 @@ tokio = { version = "1.39.2", features = ["full"] }
 tokio-retry = "0.3.0"
 clap = { version = "4.5.15", features = ["env", "derive"] }
 warp = "0.3.7"
+async-trait = "0.1.81"
 log = "*"
 env_logger = "*"
 
