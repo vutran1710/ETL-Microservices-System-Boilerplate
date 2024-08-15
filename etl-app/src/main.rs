@@ -7,6 +7,9 @@ use kanal::AsyncReceiver;
 use mq::MessageQueue;
 use server::Server;
 
+#[cfg(feature = "example")]
+use example::Etl;
+
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
@@ -15,29 +18,9 @@ struct Args {
 }
 
 async fn main_task(receiver: AsyncReceiver<Message>) -> eyre::Result<()> {
+    let etl = Etl::new();
     while let Ok(msg) = receiver.recv().await {
-        match msg {
-            Message::ProcessAll => {
-                log::info!("Received message to process all");
-                todo!("Calling crate function to process all")
-            }
-            Message::ProcessOne { id } => {
-                log::info!("Received message to process one with id: {}", id);
-                todo!("Calling crate function to process one")
-            }
-            Message::ProcessIds { ids } => {
-                log::info!("Received message to process list of ids: {:?}", ids);
-                todo!("Calling crate function to process ids")
-            }
-            Message::ProcessRange { from, to } => {
-                log::info!(
-                    "Received message to process range from {:?} to {:?}",
-                    from,
-                    to
-                );
-                todo!("Calling crate function to process range")
-            }
-        }
+        etl.process(msg, msg_queue_sender).await?;
     }
 
     eyre::bail!("Message queue receiver exited unexpectedly")
