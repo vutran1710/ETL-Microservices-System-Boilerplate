@@ -6,16 +6,24 @@ edition = "2021"
 [dependencies]
 eyre = { workspace = true }
 kanal = { workspace = true }
-rayon = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
 tokio-retry = { workspace = true }
+warp = { workspace = true }
+clap = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
 
+# Message Queue
+google-cloud-pubsub = { workspace = true, optional = true }
 
-# Crate to include
+# ETL crate to include
 example = { workspace = true, optional = true }
 example2 = { workspace = true, optional = true }
 
 [features]
 etl_example = ["example"]
 etl_example2 = ["example2"]
+pubsub = ["google-cloud-pubsub"]
+all = ["etl_example", "etl_example2", "pubsub"]
+default = ["all"]

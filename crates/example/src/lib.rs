@@ -1,5 +1,5 @@
 use clap::Parser;
-// use database::tier_1::Post;
+use database::connection;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -8,8 +8,8 @@ struct Args {
     source_db: String,
 }
 
-pub fn main() -> eyre::Result<()> {
+pub fn etl() -> eyre::Result<()> {
     let Args { source_db } = Args::parse();
-    let _conn = database::connection(&source_db);
+    let _conn = connection(&source_db);
     Ok(())
 }
