@@ -26,7 +26,7 @@ async fn main_task(receiver: AsyncReceiver<Message>) -> eyre::Result<()> {
                 todo!("Calling crate function to process one")
             }
             Message::ProcessIds { ids } => {
-                log::info!("Received message to process ids: {:?}", ids);
+                log::info!("Received message to process list of ids: {:?}", ids);
                 todo!("Calling crate function to process ids")
             }
             Message::ProcessRange { from, to } => {
