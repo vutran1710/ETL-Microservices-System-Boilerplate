@@ -10,3 +10,12 @@ rayon = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
 tokio-retry = { workspace = true }
+
+
+# Crate to include
+example = { workspace = true, optional = true }
+example2 = { workspace = true, optional = true }
+
+[features]
+etl_example = ["example"]
+etl_example2 = ["example2"]

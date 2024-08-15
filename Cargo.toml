@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["etl-app"]
+members = ["database", "etl-app", "crates/example", "crates/example2"]
 
 [workspace.dependencies]
 eyre = "0.6.12"
@@ -9,3 +9,8 @@ rayon = "1.10.0"
 serde = { version = "1.0.207", features = ["derive"] }
 tokio = { version = "1.39.2", features = ["full"] }
 tokio-retry = "0.3.0"
+
+# Packages
+database = { path = "database" }
+example = { path = "crates/example" }
+example2 = { path = "crates/example2" }

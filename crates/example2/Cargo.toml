@@ -4,3 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+eyre = { workspace = true }
+database = { workspace = true, features = ["tier_2"] }
