@@ -1,5 +1,4 @@
 pub mod messages;
-pub mod source_sink;
 
 use async_trait::async_trait;
 use kanal::AsyncSender;
