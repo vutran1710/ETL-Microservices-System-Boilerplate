@@ -1,13 +1,17 @@
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 use async_trait::async_trait;
 use clap::Parser;
 use common::messages::ChangeSet;
-use common::messages::Message;
+
 use common::ETLTrait;
+use database::connection;
 use database::interfaces::OrderingID;
+use database::PgConnection;
 use serde::Deserialize;
 use serde::Serialize;
+use std::sync::Arc;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -16,7 +20,11 @@ struct Args {
     source_db: String,
 }
 
-pub struct Etl {}
+#[allow(dead_code)]
+pub struct Etl {
+    source: Arc<Mutex<PgConnection>>,
+    sink: Arc<Mutex<PgConnection>>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct SourceOrderingID(i64);
@@ -29,21 +37,25 @@ impl OrderingID for SinkOrderingID {}
 
 #[async_trait]
 impl ETLTrait<SourceOrderingID, SinkOrderingID> for Etl {
-    async fn new(_source: &str, _sink: &str) -> eyre::Result<Self> {
-        Ok(Etl {})
+    async fn new(source: &str, sink: &str) -> eyre::Result<Self> {
+        Ok(Etl {
+            source: Arc::new(Mutex::new(connection(source))),
+            sink: Arc::new(Mutex::new(connection(sink))),
+        })
     }
 
     fn tier(&self) -> i64 {
         -1
     }
 
-    async fn handling_changes(
+    async fn processing_changes(
         &self,
         _changes: HashMap<String, ChangeSet<SourceOrderingID>>,
-    ) -> eyre::Result<Message<SinkOrderingID>> {
-        Ok(Message::DataStoreUpdated {
-            tier: -1,
-            tables: HashMap::new(),
-        })
+    ) -> eyre::Result<HashMap<String, ChangeSet<SinkOrderingID>>> {
+        Ok(HashMap::new())
+    }
+
+    async fn cancel_processing(&self, _tables: Vec<String>) -> eyre::Result<Vec<String>> {
+        Ok(vec![])
     }
 }

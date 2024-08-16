@@ -38,4 +38,8 @@ pub enum Message<T: OrderingID> {
         tier: i64,
         tables: HashMap<String, ChangeSet<T>>,
     },
+    CancelProcessing {
+        tier: i64,
+        tables: Vec<String>,
+    },
 }

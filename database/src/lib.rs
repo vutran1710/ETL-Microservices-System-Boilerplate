@@ -7,7 +7,7 @@ pub mod tier_1;
 #[cfg(feature = "tier_2")]
 pub mod tier_2;
 
-use diesel::pg::PgConnection;
+pub use diesel::pg::PgConnection;
 use diesel::prelude::*;
 
 pub fn connection(database_url: &str) -> PgConnection {
