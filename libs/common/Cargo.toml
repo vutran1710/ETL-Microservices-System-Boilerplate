@@ -10,4 +10,4 @@ async-trait = { workspace = true }
 eyre = { workspace = true }
 log = { workspace = true }
 kanal = { workspace = true }
-database = { workspace = true, features = ["interfaces"] }
+database = { workspace = true }

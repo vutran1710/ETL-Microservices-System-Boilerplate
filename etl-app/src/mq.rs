@@ -5,7 +5,7 @@ use google_cloud_pubsub::client::Client as PubSubClient;
 use google_cloud_pubsub::client::ClientConfig as PubSubClientConfig;
 
 use clap::Parser;
-use database::interfaces::OrderingID;
+use database::OrderingID;
 use kanal::AsyncReceiver;
 use kanal::AsyncSender;
 

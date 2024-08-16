@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-database = { workspace = true, features = ["tier_1", "interfaces"] }
+database = { workspace = true, features = ["tier_1"] }
 clap = { workspace = true }
 eyre = { workspace = true }
 common = { workspace = true }

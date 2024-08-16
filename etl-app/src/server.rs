@@ -1,5 +1,5 @@
 use common::messages::Message;
-use database::interfaces::OrderingID;
+use database::OrderingID;
 use kanal::AsyncSender;
 use std::convert::Infallible;
 use warp::http::StatusCode;

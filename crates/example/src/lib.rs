@@ -6,8 +6,8 @@ use clap::Parser;
 use common::messages::ChangeSet;
 
 use common::ETLTrait;
-use database::connection;
-use database::interfaces::OrderingID;
+use database::create_pg_connection;
+use database::OrderingID;
 use database::PgConnection;
 use serde::Deserialize;
 use serde::Serialize;
@@ -39,8 +39,8 @@ impl OrderingID for SinkOrderingID {}
 impl ETLTrait<SourceOrderingID, SinkOrderingID> for Etl {
     async fn new(source: &str, sink: &str) -> eyre::Result<Self> {
         Ok(Etl {
-            source: Arc::new(Mutex::new(connection(source))),
-            sink: Arc::new(Mutex::new(connection(sink))),
+            source: Arc::new(Mutex::new(create_pg_connection(source))),
+            sink: Arc::new(Mutex::new(create_pg_connection(sink))),
         })
     }
 

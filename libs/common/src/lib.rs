@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use kanal::AsyncSender;
 use std::collections::HashMap;
 
-use database::interfaces::OrderingID;
+use database::OrderingID;
 use messages::ChangeSet;
 use messages::Message;
 

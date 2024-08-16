@@ -1,5 +1,5 @@
-use database::interfaces::OrderingID;
-use database::interfaces::RangeID;
+use database::OrderingID;
+use database::RangeID;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
