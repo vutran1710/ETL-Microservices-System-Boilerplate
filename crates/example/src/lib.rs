@@ -1,6 +1,3 @@
-mod sink;
-mod source;
-
 use async_trait::async_trait;
 use clap::Parser;
 use common::messages::ChangeSet;
@@ -13,12 +10,13 @@ use database::RowStream;
 use database::Table;
 use futures_util::pin_mut;
 use futures_util::stream::StreamExt;
-pub use sink::SinkOrderingID;
-pub use source::SourceOrderingID;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
+
+pub use database::tier_1::QueryID as SourceOrderingID;
+pub use database::tier_2::QueryID as SinkOrderingID;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
