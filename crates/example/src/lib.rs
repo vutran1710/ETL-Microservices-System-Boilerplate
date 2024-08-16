@@ -1,17 +1,17 @@
-use std::collections::HashMap;
-use std::sync::Mutex;
+mod sink;
+mod source;
 
 use async_trait::async_trait;
 use clap::Parser;
 use common::messages::ChangeSet;
-
 use common::ETLTrait;
 use database::create_pg_connection;
-use database::OrderingID;
 use database::PgConnection;
-use serde::Deserialize;
-use serde::Serialize;
+pub use sink::SinkOrderingID;
+pub use source::SourceOrderingID;
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -25,15 +25,6 @@ pub struct Etl {
     source: Arc<Mutex<PgConnection>>,
     sink: Arc<Mutex<PgConnection>>,
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct SourceOrderingID(i64);
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct SinkOrderingID((i64, i32));
-
-impl OrderingID for SourceOrderingID {}
-impl OrderingID for SinkOrderingID {}
 
 #[async_trait]
 impl ETLTrait<SourceOrderingID, SinkOrderingID> for Etl {
