@@ -8,6 +8,9 @@ pub mod tier_1;
 #[cfg(feature = "tier_2")]
 pub mod tier_2;
 
+#[cfg(feature = "tier_3")]
+pub mod tier_3;
+
 pub use diesel::pg::PgConnection;
 use diesel::prelude::*;
 
