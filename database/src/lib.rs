@@ -1,3 +1,6 @@
+#[cfg(feature = "interfaces")]
+pub mod interfaces;
+
 #[cfg(feature = "tier_1")]
 pub mod tier_1;
 

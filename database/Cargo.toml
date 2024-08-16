@@ -5,7 +5,10 @@ edition = "2021"
 
 [dependencies]
 diesel = { version = "2.2.0", features = ["postgres"] }
+serde = { workspace = true }
+eyre = { workspace = true }
 
 [features]
 tier_1 = []
 tier_2 = []
+interfaces = []

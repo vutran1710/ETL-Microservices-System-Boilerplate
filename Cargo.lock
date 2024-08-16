@@ -310,7 +310,10 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "database",
  "eyre",
+ "kanal",
+ "log",
  "serde",
  "serde_json",
 ]
@@ -420,6 +423,8 @@ name = "database"
 version = "0.1.0"
 dependencies = [
  "diesel",
+ "eyre",
+ "serde",
 ]
 
 [[package]]
@@ -550,6 +555,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "common",
+ "database",
  "env_logger",
  "example",
  "example2",
@@ -574,9 +580,14 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 name = "example"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "clap",
+ "common",
  "database",
  "eyre",
+ "kanal",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

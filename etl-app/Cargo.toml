@@ -20,10 +20,12 @@ google-cloud-pubsub = { workspace = true, optional = true }
 
 # Libs
 common = { workspace = true }
+database = { workspace = true, features = ["interfaces"] }
 
 # ETL crate to include
 example = { workspace = true, optional = true }
 example2 = { workspace = true, optional = true }
+
 
 [features]
 etl_example = ["example"]
