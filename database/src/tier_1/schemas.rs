@@ -4,7 +4,7 @@ diesel::table! {
         tx_index -> SmallInt,
         from -> VarChar,
         to -> VarChar,
-        value -> Numeric,
+        value -> BigInt,
         timestamp -> Timestamp,
     }
 }

@@ -1,9 +1,9 @@
 diesel::table! {
     buy_sell (user, block_number, tx_index) {
         user -> VarChar,
-        action -> VarChar,
-        amount -> Numeric,
+        amount -> BigInt,
         block_number -> BigInt,
         tx_index -> SmallInt,
+        timestamp -> Timestamp,
     }
 }

@@ -15,8 +15,18 @@ pub struct Change<T: OrderingID> {
 pub struct ChangeSet<T: OrderingID>(Vec<Change<T>>);
 
 impl<T: OrderingID> ChangeSet<T> {
-    pub fn new(changes: Vec<Change<T>>) -> Self {
-        Self(changes)
+    pub fn get_change_ranges(&self) -> Vec<RangeID<T>> {
+        self.0.iter().map(|c| c.range.clone()).collect()
+    }
+}
+
+impl<T: OrderingID> ChangeSet<T> {
+    pub fn new() -> Self {
+        Self(vec![])
+    }
+
+    pub fn add_change(&mut self, change: Change<T>) {
+        self.0.push(change);
     }
 
     /// ChangeSet must not have overlapping ranges

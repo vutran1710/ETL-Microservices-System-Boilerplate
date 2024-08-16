@@ -1,4 +1,3 @@
-use diesel::data_types::PgNumeric;
 use diesel::data_types::PgTimestamp;
 use diesel::prelude::*;
 mod schemas;
@@ -17,7 +16,7 @@ pub struct Transaction {
     pub tx_index: i16,
     pub from: String,
     pub to: String,
-    pub value: PgNumeric,
+    pub value: i64,
     pub timestamp: PgTimestamp,
 }
 
@@ -49,8 +48,10 @@ impl RowStream<QueryID> for Transaction {
         let rows = transactions
             .filter(block_number.ge(xfrom.block_number))
             .filter(block_number.le(xto.block_number))
+            // FIXME: This is not correct to filter by tx_index like this
             .filter(tx_index.ge(xfrom.tx_index))
             .filter(tx_index.le(xto.tx_index))
+            .limit(1000)
             .load(pool)?;
         Ok(rows)
     }

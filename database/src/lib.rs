@@ -2,6 +2,7 @@ mod interfaces;
 pub use interfaces::*;
 use serde::Deserialize;
 use serde::Serialize;
+use strum::Display;
 use strum::EnumString;
 
 #[cfg(feature = "tier_1")]
@@ -21,7 +22,7 @@ pub fn create_pg_connection(database_url: &str) -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display)]
 pub enum Table {
     #[cfg(feature = "tier_1")]
     Tier1(tier_1::Table),

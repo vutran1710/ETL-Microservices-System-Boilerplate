@@ -2,6 +2,9 @@ use diesel::PgConnection;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Debug;
+use std::ops::DerefMut;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use async_stream::stream;
 
@@ -50,13 +53,13 @@ pub trait RowStream<T: OrderingID> {
     fn query_range(pool: &mut PgConnection, range: &RangeID<T>) -> eyre::Result<Vec<Self>>
     where
         Self: Sized;
-    fn query(pool: &mut PgConnection, ranges: &[RangeID<T>]) -> impl Stream<Item = Self>
+    fn query(pool: Arc<Mutex<PgConnection>>, ranges: &[RangeID<T>]) -> impl Stream<Item = Self>
     where
         Self: Sized,
     {
         stream! {
             for range in ranges {
-                let rows = Self::query_range(pool, range)
+                let rows = Self::query_range(pool.lock().unwrap().deref_mut(), range)
                     .map_err(|e| {
                         log::error!("Error querying range: range={:?} {:?}", range, e);
                         e

@@ -2,11 +2,21 @@ mod schemas;
 
 use crate::OrderingID;
 use crate::RowStream;
-use diesel::data_types::PgNumeric;
+use diesel::data_types::PgTimestamp;
 use diesel::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
+use strum::Display;
 use strum::EnumString;
+
+#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Display)]
+pub enum Action {
+    #[default]
+    #[strum(serialize = "BUY")]
+    Buy,
+    #[strum(serialize = "SELL")]
+    Sell,
+}
 
 // Database tables are defined here ------------------------------------------------------
 #[derive(Queryable, Selectable)]
@@ -14,10 +24,10 @@ use strum::EnumString;
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct BuySell {
     pub user: String,
-    pub action: String,
-    pub amount: PgNumeric,
+    pub amount: i64,
     pub block_number: i64,
     pub tx_index: i16,
+    pub timestamp: PgTimestamp,
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -50,6 +60,7 @@ impl RowStream<QueryID> for BuySell {
             .filter(user.eq(from.user))
             .filter(block_number.ge(from.block_number))
             .filter(block_number.le(to.block_number))
+            // FIXME: not correct to filter by tx_index like this
             .filter(tx_index.ge(from.tx_index))
             .filter(tx_index.le(to.tx_index))
             .load(pool)?;
