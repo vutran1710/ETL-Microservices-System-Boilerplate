@@ -43,3 +43,33 @@ pub enum Message<T: OrderingID> {
         tables: Vec<String>,
     },
 }
+
+impl<T: OrderingID> Message<T> {
+    pub fn get_tier(&self) -> i64 {
+        match self {
+            Message::DataStoreUpdated { tier, .. } => *tier,
+            Message::CancelProcessing { tier, .. } => *tier,
+        }
+    }
+}
+
+impl<T: OrderingID> std::fmt::Display for Message<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Message::DataStoreUpdated { tier, tables } => {
+                write!(
+                    f,
+                    "** DataStoreUpdated: tier: {}, tables: {:?}",
+                    tier, tables
+                )
+            }
+            Message::CancelProcessing { tier, tables } => {
+                write!(
+                    f,
+                    "** CancelProcessing: tier: {}, tables: {:?}",
+                    tier, tables
+                )
+            }
+        }
+    }
+}

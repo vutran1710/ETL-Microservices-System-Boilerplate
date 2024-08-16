@@ -30,8 +30,8 @@ pub trait ETLTrait<T: OrderingID, P: OrderingID>: Send + Sync {
 
     /// Validate message tier
     /// Current Tier App only process the message sent from the lower tier
-    fn validate_message_tier(&self, tier: i64) -> bool {
-        tier + 1 == self.tier()
+    fn validate_message_tier(&self, receiving_tier: i64) -> bool {
+        receiving_tier + 1 == self.tier()
     }
 
     /// Process the message and send the result to the emitter
@@ -40,41 +40,34 @@ pub trait ETLTrait<T: OrderingID, P: OrderingID>: Send + Sync {
         msg: Message<T>,
         emitter: AsyncSender<Message<P>>,
     ) -> eyre::Result<()> {
+        log::info!("Processing message: \n{}", msg);
+
+        if !self.validate_message_tier(msg.get_tier()) {
+            // NOTE: if by any chance the tier is not the expected one, we should log the error and return
+            // instead of panicking
+            log::error!(
+                "Tier mismatch: expected: {}, got: {}, skipping message processing",
+                self.tier(),
+                msg.get_tier()
+            );
+            return Ok(());
+        }
+
         match msg {
-            Message::DataStoreUpdated { tier, tables } => {
-                log::info!(
-                    "Handling DataStoreUpdated: tier: {}, tables: {:?}",
-                    tier,
-                    tables
-                );
-
-                if !self.validate_message_tier(tier) {
-                    eyre::bail!("Tier mismatch: expected: {}, got: {}", self.tier(), tier);
-                }
-
-                let changes = self.processing_changes(tables).await?;
+            Message::DataStoreUpdated { tier: _, tables } => {
                 emitter
                     .send(Message::DataStoreUpdated {
                         tier: self.tier(),
-                        tables: changes,
+                        tables: self.processing_changes(tables).await?,
                     })
                     .await?;
                 Ok(())
             }
-            Message::CancelProcessing { tier, tables } => {
-                log::info!(
-                    "Handling CancelProcessing: tier: {}, tables: {:?}",
-                    tier,
-                    tables
-                );
-                if self.validate_message_tier(tier) {
-                    eyre::bail!("Tier mismatch: expected: {}, got: {}", self.tier(), tier);
-                }
-                let cancelled_tables = self.cancel_processing(tables).await?;
+            Message::CancelProcessing { tier: _, tables } => {
                 emitter
                     .send(Message::CancelProcessing {
                         tier: self.tier(),
-                        tables: cancelled_tables,
+                        tables: self.cancel_processing(tables).await?,
                     })
                     .await?;
                 Ok(())
