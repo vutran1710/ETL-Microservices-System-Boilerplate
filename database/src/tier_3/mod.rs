@@ -19,7 +19,7 @@ pub struct BalancePerDate {
     pub date: NaiveDate,
 }
 
-#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]
 pub enum Table {
     #[strum(ascii_case_insensitive)]
     #[default]

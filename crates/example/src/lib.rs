@@ -11,7 +11,6 @@ use database::Table;
 use futures_util::pin_mut;
 use futures_util::stream::StreamExt;
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -35,7 +34,7 @@ impl Etl {
     async fn process_transaction(
         &self,
         transaction: tier_1::Transaction,
-        _sink_changes: &mut HashMap<String, ChangeSet<SinkOrderingID>>,
+        _sink_changes: &mut HashMap<Table, ChangeSet<SinkOrderingID>>,
     ) -> eyre::Result<()> {
         let _sell = tier_2::BuySell {
             user: transaction.from,
@@ -64,17 +63,16 @@ impl ETLTrait<SourceOrderingID, SinkOrderingID> for Etl {
     }
 
     fn tier(&self) -> i64 {
-        -1
+        0
     }
 
     async fn processing_changes(
         &self,
-        changes: HashMap<String, ChangeSet<SourceOrderingID>>,
-    ) -> eyre::Result<HashMap<String, ChangeSet<SinkOrderingID>>> {
-        let mut sink_changes = HashMap::new();
+        changes: HashMap<Table, ChangeSet<SourceOrderingID>>,
+    ) -> eyre::Result<HashMap<Table, ChangeSet<SinkOrderingID>>> {
+        let mut sink_changes: HashMap<Table, ChangeSet<SinkOrderingID>> = HashMap::new();
 
-        for (table_name, changes) in changes.iter() {
-            let table = Table::from_str(table_name)?;
+        for (table, changes) in changes.iter() {
             let ranges = changes.get_change_ranges();
 
             match table {
@@ -86,13 +84,13 @@ impl ETLTrait<SourceOrderingID, SinkOrderingID> for Etl {
                     }
                 }
 
-                _ => eyre::bail!("Unsupported table: {}", table_name),
+                _ => eyre::bail!("Unsupported table: {}", table),
             }
         }
         Ok(sink_changes)
     }
 
-    async fn cancel_processing(&self, _tables: Vec<String>) -> eyre::Result<Vec<String>> {
+    async fn cancel_processing(&self, _tables: Vec<Table>) -> eyre::Result<Vec<Table>> {
         Ok(vec![])
     }
 }

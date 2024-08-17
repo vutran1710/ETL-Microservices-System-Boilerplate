@@ -1,5 +1,6 @@
 use database::OrderingID;
 use database::RangeID;
+use database::Table;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -42,15 +43,15 @@ impl<T: OrderingID> ChangeSet<T> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message<T: OrderingID> {
     DataStoreUpdated {
         tier: i64,
-        tables: HashMap<String, ChangeSet<T>>,
+        tables: HashMap<Table, ChangeSet<T>>,
     },
     CancelProcessing {
         tier: i64,
-        tables: Vec<String>,
+        tables: Vec<Table>,
     },
 }
 

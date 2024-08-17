@@ -22,7 +22,7 @@ pub fn create_pg_connection(database_url: &str) -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display)]
+#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, Hash)]
 pub enum Table {
     #[cfg(feature = "tier_1")]
     Tier1(tier_1::Table),

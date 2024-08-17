@@ -1,6 +1,7 @@
 pub mod messages;
 
 use async_trait::async_trait;
+use database::Table;
 use kanal::AsyncSender;
 use std::collections::HashMap;
 
@@ -21,12 +22,12 @@ pub trait ETLTrait<T: OrderingID, P: OrderingID>: Send + Sync {
     /// Result is ChangeSet of the current tier
     async fn processing_changes(
         &self,
-        changes: HashMap<String, ChangeSet<T>>,
-    ) -> eyre::Result<HashMap<String, ChangeSet<P>>>;
+        changes: HashMap<Table, ChangeSet<T>>,
+    ) -> eyre::Result<HashMap<Table, ChangeSet<P>>>;
 
     /// Cancel the processing related to the tables
     /// Emit cancelling message to the emitter with the tables that are cancelled OF THE CURRENT TIER
-    async fn cancel_processing(&self, tables: Vec<String>) -> eyre::Result<Vec<String>>;
+    async fn cancel_processing(&self, tables: Vec<Table>) -> eyre::Result<Vec<Table>>;
 
     /// Validate message tier
     /// Current Tier App only process the message sent from the lower tier

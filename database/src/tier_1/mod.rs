@@ -21,7 +21,7 @@ pub struct Transaction {
     pub block_tx_index: i64,
 }
 
-#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]
 pub enum Table {
     #[strum(ascii_case_insensitive)]
     #[default]
