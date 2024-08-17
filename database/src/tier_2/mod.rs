@@ -25,9 +25,8 @@ pub enum Action {
 pub struct BuySell {
     pub user: String,
     pub amount: i64,
-    pub block_number: i64,
-    pub tx_index: i16,
     pub timestamp: PgTimestamp,
+    pub block_tx_index: i64,
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -41,8 +40,7 @@ pub enum Table {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct QueryID {
     pub user: String,
-    pub block_number: i64,
-    pub tx_index: i16,
+    pub block_tx_index: i64,
 }
 
 impl OrderingID for QueryID {}
@@ -58,11 +56,8 @@ impl RowStream<QueryID> for BuySell {
         let to = range.to.clone();
         let rows = buy_sell
             .filter(user.eq(from.user))
-            .filter(block_number.ge(from.block_number))
-            .filter(block_number.le(to.block_number))
-            // FIXME: not correct to filter by tx_index like this
-            .filter(tx_index.ge(from.tx_index))
-            .filter(tx_index.le(to.tx_index))
+            .filter(block_tx_index.ge(from.block_tx_index))
+            .filter(block_tx_index.le(to.block_tx_index))
             .load(pool)?;
         Ok(rows)
     }

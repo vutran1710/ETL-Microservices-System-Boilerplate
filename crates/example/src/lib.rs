@@ -40,16 +40,14 @@ impl Etl {
         let _sell = tier_2::BuySell {
             user: transaction.from,
             amount: transaction.value * -1,
-            block_number: transaction.block_number,
-            tx_index: transaction.tx_index,
             timestamp: transaction.timestamp,
+            block_tx_index: transaction.block_tx_index,
         };
         let _buy = tier_2::BuySell {
             user: transaction.to,
             amount: transaction.value,
-            block_number: transaction.block_number,
-            tx_index: transaction.tx_index,
             timestamp: transaction.timestamp,
+            block_tx_index: transaction.block_tx_index,
         };
         // Insert the sell and buy transactions into the sink
         Ok(())

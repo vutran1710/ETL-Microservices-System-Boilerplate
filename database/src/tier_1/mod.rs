@@ -18,6 +18,7 @@ pub struct Transaction {
     pub to: String,
     pub value: i64,
     pub timestamp: PgTimestamp,
+    pub block_tx_index: i64,
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -30,8 +31,7 @@ pub enum Table {
 // QueryID is used to query the database -------------------------------------------------
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct QueryID {
-    pub block_number: i64,
-    pub tx_index: i16,
+    pub block_tx_index: i64,
 }
 
 impl OrderingID for QueryID {}
@@ -46,12 +46,8 @@ impl RowStream<QueryID> for Transaction {
         let xfrom = range.from.clone();
         let xto = range.to.clone();
         let rows = transactions
-            .filter(block_number.ge(xfrom.block_number))
-            .filter(block_number.le(xto.block_number))
-            // FIXME: This is not correct to filter by tx_index like this
-            .filter(tx_index.ge(xfrom.tx_index))
-            .filter(tx_index.le(xto.tx_index))
-            .limit(1000)
+            .filter(block_number.ge(xfrom.block_tx_index))
+            .filter(block_number.le(xto.block_tx_index))
             .load(pool)?;
         Ok(rows)
     }
