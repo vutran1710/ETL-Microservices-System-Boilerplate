@@ -1,0 +1,24 @@
+services:
+  pg:
+    image: bitnami/postgresql:13
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DATABASE=tier_1
+    volumes:
+      - ./.persist/psql:/bitnami/postgresql
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: "rabbitmq"
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - etl-rs
+
+networks:
+  etl-rs:
+    driver: bridge
