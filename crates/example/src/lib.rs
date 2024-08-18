@@ -7,12 +7,10 @@ use database::tier_1;
 use database::tier_2;
 use database::PgConnection;
 use database::QueryWithRange;
-use database::Range;
 use database::RowStream;
 use database::Table;
 use futures_util::pin_mut;
 use futures_util::stream::StreamExt;
-use serde_json::json;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::sync::Arc;
@@ -31,57 +29,45 @@ pub struct Etl {
     sink: Arc<Mutex<PgConnection>>,
 }
 
-impl Etl {
-    async fn process_transaction(
-        &self,
-        transaction: tier_1::Transaction,
-        sink_changes: &mut HashMap<Table, ChangeSet>,
-    ) -> eyre::Result<()> {
-        let sell = tier_2::BuySell {
-            user: transaction.from,
-            amount: transaction.value * -1,
-            timestamp: transaction.timestamp,
-            block_tx_index: transaction.block_tx_index,
-        };
-        let q1 = QueryWithRange {
-            range: Range::Numeric {
-                from: sell.block_tx_index,
-                to: sell.block_tx_index,
-            },
-            filters: json!({ "user": sell.user }),
-        };
-        let buy = tier_2::BuySell {
-            user: transaction.to,
-            amount: transaction.value,
-            timestamp: transaction.timestamp,
-            block_tx_index: transaction.block_tx_index,
-        };
-        let q2 = QueryWithRange {
-            range: Range::Numeric {
-                from: buy.block_tx_index,
-                to: buy.block_tx_index,
-            },
-            filters: json!({ "user": buy.user }),
-        };
+impl Etl {}
 
-        let mut pool = self.sink.lock().unwrap();
-        let pool = pool.deref_mut();
-        tier_2::BuySell::insert_many(pool, vec![sell, buy])?;
+fn process_transaction(
+    pool: &mut PgConnection,
+    transaction: tier_1::Transaction,
+    sink_changes: &mut HashMap<Table, ChangeSet>,
+) -> eyre::Result<()> {
+    let sell = tier_2::BuySell {
+        user: transaction.from,
+        amount: transaction.value * -1,
+        timestamp: transaction.timestamp,
+        block_tx_index: transaction.block_tx_index,
+    };
+    let buy = tier_2::BuySell {
+        user: transaction.to,
+        amount: transaction.value,
+        timestamp: transaction.timestamp,
+        block_tx_index: transaction.block_tx_index,
+    };
 
-        sink_changes
-            .entry(Table::Tier2(tier_2::Table::BuySell))
-            .or_insert(ChangeSet::new())
-            .push(q1);
+    let q1 = QueryWithRange::from(&sell);
+    let q2 = QueryWithRange::from(&buy);
 
-        sink_changes
-            .entry(Table::Tier2(tier_2::Table::BuySell))
-            .or_insert(ChangeSet::new())
-            .push(q2);
+    tier_2::BuySell::insert_many(pool, vec![sell, buy])?;
 
-        Ok(())
-    }
+    sink_changes
+        .entry(Table::Tier2(tier_2::Table::BuySell))
+        .or_insert(ChangeSet::new())
+        .push(q1);
+
+    sink_changes
+        .entry(Table::Tier2(tier_2::Table::BuySell))
+        .or_insert(ChangeSet::new())
+        .push(q2);
+
+    Ok(())
 }
 
+// Implement ETLTrait here -----------------------------------------------------
 #[async_trait]
 impl ETLTrait for Etl {
     async fn new(source: &str, sink: &str) -> eyre::Result<Self> {
@@ -92,7 +78,7 @@ impl ETLTrait for Etl {
     }
 
     fn tier(&self) -> i64 {
-        0
+        1
     }
 
     async fn processing_changes(
@@ -107,7 +93,9 @@ impl ETLTrait for Etl {
                     let stream = tier_1::Transaction::query(self.source.clone(), &changes.ranges());
                     pin_mut!(stream);
                     while let Some(row) = stream.next().await {
-                        self.process_transaction(row, &mut sink_changes).await?;
+                        let mut pool = self.sink.lock().unwrap();
+                        let pool = pool.deref_mut();
+                        process_transaction(pool, row, &mut sink_changes)?;
                     }
                 }
 
@@ -118,6 +106,6 @@ impl ETLTrait for Etl {
     }
 
     async fn cancel_processing(&self, _tables: Vec<Table>) -> eyre::Result<Vec<Table>> {
-        Ok(vec![])
+        todo!("Implement cancel-processing")
     }
 }

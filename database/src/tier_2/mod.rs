@@ -8,6 +8,7 @@ use diesel::insert_into;
 use diesel::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
+use serde_json::json;
 use strum::Display;
 use strum::EnumString;
 
@@ -50,6 +51,18 @@ pub enum Table {
 #[derive(Deserialize, Serialize)]
 pub struct Filter {
     pub user: String,
+}
+
+impl From<&BuySell> for QueryWithRange {
+    fn from(value: &BuySell) -> Self {
+        QueryWithRange {
+            range: Range::Numeric {
+                from: value.block_tx_index,
+                to: value.block_tx_index,
+            },
+            filters: json!({ "user": value.user }),
+        }
+    }
 }
 
 // Implement RowStream for BuySell -------------------------------------------------------
