@@ -29,7 +29,8 @@ pub struct BuySell {
     pub user: String,
     pub amount: i64,
     pub timestamp: PgTimestamp,
-    pub block_tx_index: i64,
+    // NOTE: derived from Tx's range_index
+    pub range_index: i64,
 }
 
 impl BuySell {
@@ -78,8 +79,8 @@ impl RowStream for BuySell {
         {
             let rows = buy_sell
                 .filter(user.eq(user_filter.user))
-                .filter(block_tx_index.ge(range_from))
-                .filter(block_tx_index.le(range_to))
+                .filter(range_index.ge(range_from))
+                .filter(range_index.le(range_to))
                 .load(pool)?;
 
             Ok(rows)

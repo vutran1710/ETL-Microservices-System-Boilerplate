@@ -1,11 +1,11 @@
 diesel::table! {
-    transactions (block_tx_index) {
+    transactions (range_index) {
         block_number -> BigInt,
         tx_index -> SmallInt,
         from -> VarChar,
         to -> VarChar,
         value -> BigInt,
         timestamp -> Timestamp,
-        block_tx_index -> BigInt,
+        range_index -> BigInt,
     }
 }

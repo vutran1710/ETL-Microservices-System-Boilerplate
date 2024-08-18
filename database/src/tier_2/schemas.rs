@@ -1,8 +1,8 @@
 diesel::table! {
-    buy_sell (user, block_tx_index) {
+    buy_sell (user, range_index) {
         user -> VarChar,
         amount -> BigInt,
         timestamp -> Timestamp,
-        block_tx_index -> BigInt,
+        range_index -> BigInt,
     }
 }
