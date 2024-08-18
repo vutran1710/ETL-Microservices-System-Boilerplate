@@ -33,14 +33,14 @@ impl Range {
                     from: other_from,
                     to: other_to,
                 },
-            ) => from < other_to || to > other_from,
+            ) => from <= other_to && other_from <= to,
             (
                 Range::Date { from, to },
                 Range::Date {
                     from: other_from,
                     to: other_to,
                 },
-            ) => from <= other_to && to >= other_from,
+            ) => from <= other_to && other_from <= to,
             _ => false,
         }
     }
