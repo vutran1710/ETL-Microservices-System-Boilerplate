@@ -30,9 +30,15 @@ example2 = { workspace = true, optional = true }
 
 
 [features]
+# Etl libs
 etl_example = ["example"]
 etl_example2 = ["example2"]
+
+# MQ selection
 pubsub = ["google-cloud-pubsub"]
 rabbitmq = ["amqprs"]
+
+# Build selection
 all = ["etl_example", "etl_example2", "rabbitmq"]
 default = ["all"]
+example_with_rabbitmq = ["example", "rabbitmq"]
