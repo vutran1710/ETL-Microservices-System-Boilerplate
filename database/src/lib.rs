@@ -22,8 +22,7 @@ pub fn create_pg_connection(database_url: &str) -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-#[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, Hash)]
-#[serde(rename_all = "lowercase")]
+#[derive(EnumString, Debug, Clone, PartialEq, Eq, Display, Hash, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Table {
     #[cfg(feature = "tier_1")]
@@ -34,4 +33,20 @@ pub enum Table {
 
     #[cfg(feature = "tier_3")]
     Tier3(tier_3::Table),
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_view_table_enum() {
+        env_logger::try_init().ok();
+        #[cfg(feature = "tier_1")]
+        let table = Table::Tier1(tier_1::Table::Transactions);
+        let table_str = serde_json::to_string(&table).unwrap();
+        log::info!("table_str: {}", table_str);
+        assert_eq!(table_str, "\"transactions\"");
+    }
 }

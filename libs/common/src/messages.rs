@@ -56,7 +56,6 @@ impl ChangeSet {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all_fields = "SCREAMING_SNAKE_CASE")]
 pub enum Message {
     DataStoreUpdated {
         tier: i64,
@@ -95,5 +94,50 @@ impl std::fmt::Display for Message {
                 )
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use database::tier_1::Table as Tier1;
+    use database::Table;
+    use serde_json::json;
+
+    #[test]
+    fn test_view_message() {
+        env_logger::try_init().ok();
+        let mut tables = HashMap::new();
+        let mut changes = ChangeSet::new();
+        changes.push(QueryWithRange {
+            range: Range::Numeric { from: 1, to: 10 },
+            filters: serde_json::json!({"user": "abcde" }),
+        });
+
+        tables.insert(Table::Tier1(Tier1::Transactions), changes);
+
+        let msg = Message::DataStoreUpdated { tier: 1, tables };
+        log::info!("Message: {:?}", msg);
+        let actual_value = serde_json::to_value(&msg).unwrap();
+        let expected_value = json!({
+            "DataStoreUpdated": {
+                "tier": 1,
+                "tables": {
+                    "transactions": [
+                        {
+                            "range": {
+                            "from": 1,
+                            "to": 10
+                            },
+                            "filters": {
+                            "user": "abcde"
+                            }
+                        }
+                    ]
+                }
+            }
+        });
+
+        assert_eq!(actual_value, expected_value);
     }
 }

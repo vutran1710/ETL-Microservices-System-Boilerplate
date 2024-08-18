@@ -43,6 +43,7 @@ impl BuySell {
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]
+#[serde(rename_all = "lowercase")]
 pub enum Table {
     #[strum(ascii_case_insensitive)]
     #[default]
@@ -58,8 +59,8 @@ impl From<&BuySell> for QueryWithRange {
     fn from(value: &BuySell) -> Self {
         QueryWithRange {
             range: Range::Numeric {
-                from: value.block_tx_index,
-                to: value.block_tx_index,
+                from: value.range_index,
+                to: value.range_index,
             },
             filters: json!({ "user": value.user }),
         }

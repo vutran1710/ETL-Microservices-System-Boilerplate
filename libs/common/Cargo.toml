@@ -11,3 +11,7 @@ eyre = { workspace = true }
 log = { workspace = true }
 kanal = { workspace = true }
 database = { workspace = true }
+
+[dev-dependencies]
+env_logger = { workspace = true }
+database = { workspace = true, features = ["full"] }

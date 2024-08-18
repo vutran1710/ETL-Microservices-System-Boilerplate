@@ -21,6 +21,7 @@ pub struct BalancePerDate {
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]
+#[serde(rename_all = "lowercase")]
 pub enum Table {
     #[strum(ascii_case_insensitive)]
     #[default]

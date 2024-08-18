@@ -16,7 +16,11 @@ strum = { workspace = true }
 serde = { workspace = true }
 eyre = { workspace = true }
 
+[dev-dependencies]
+env_logger = { workspace = true }
+
 [features]
 tier_1 = []
 tier_2 = []
 tier_3 = []
+full = ["tier_1", "tier_2", "tier_3"]
