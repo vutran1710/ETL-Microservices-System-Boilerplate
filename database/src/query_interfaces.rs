@@ -11,6 +11,7 @@ use std::sync::Mutex;
 
 /// Range is [from, to]: both are inclusive
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(untagged)]
 pub enum Range {
     Numeric { from: i64, to: i64 },
     Date { from: NaiveDate, to: NaiveDate },

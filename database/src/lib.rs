@@ -23,6 +23,8 @@ pub fn create_pg_connection(database_url: &str) -> PgConnection {
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, Hash)]
+#[serde(rename_all = "lowercase")]
+#[serde(untagged)]
 pub enum Table {
     #[cfg(feature = "tier_1")]
     Tier1(tier_1::Table),

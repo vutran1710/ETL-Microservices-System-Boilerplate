@@ -56,6 +56,7 @@ impl ChangeSet {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all_fields = "SCREAMING_SNAKE_CASE")]
 pub enum Message {
     DataStoreUpdated {
         tier: i64,

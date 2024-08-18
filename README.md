@@ -53,3 +53,5 @@ pub struct Args {
 ```rust
 $ cargo run -p etl-app -F example_with_rabbitmq
 ```
+
+When run, application has a api server that user can send manual processing request at `http://{host}:{port}/process`
