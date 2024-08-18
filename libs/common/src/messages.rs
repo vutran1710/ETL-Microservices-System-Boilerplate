@@ -14,20 +14,13 @@ impl ChangeSet {
         Self(vec![])
     }
 
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
     pub fn ranges(&self) -> &Vec<QueryWithRange> {
         &self.0
     }
 
     // NOTE: add a range to the ChangeSet
     // But only accept range of same type
+    // FIXME: join the ranges that are adjacent
     pub fn push(&mut self, query: QueryWithRange) -> bool {
         if self.0.len() == 0 {
             self.0.push(query);
