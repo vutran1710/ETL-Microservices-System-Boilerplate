@@ -9,7 +9,7 @@ use serde::Serialize;
 use strum::EnumString;
 
 // Database tables are defined here ------------------------------------------------------
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Insertable, Debug)]
 #[diesel(table_name = schemas::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Transaction {
@@ -49,5 +49,58 @@ impl RowStream for Transaction {
         } else {
             Err(eyre::eyre!("Invalid range type"))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+    use rand::Rng;
+
+    fn create_mock_transactions(conn: &mut PgConnection, count: usize) {
+        use super::schemas::transactions::dsl::*;
+
+        let mut rng = rand::thread_rng();
+        let mut mock_transactions = Vec::with_capacity(count);
+        let users = vec!["Alice", "Bob", "David"];
+
+        for i in 0..count {
+            let mock_block_number: i64 = (i as i64) + 5;
+            let mock_tx_index = rng.gen_range(1..10);
+            let mock_range_index = mock_block_number * 1000 + mock_tx_index;
+
+            let transaction = Transaction {
+                block_number: mock_block_number,
+                tx_index: mock_tx_index as i16,
+                from: users[i % users.len()].to_string(),
+                to: users[(i + 1) % users.len()].to_string(),
+                value: rng.gen_range(10..20),
+                timestamp: PgTimestamp(Utc::now().naive_utc().and_utc().timestamp()),
+                range_index: mock_range_index,
+            };
+            mock_transactions.push(transaction);
+        }
+
+        log::info!("Execute.........");
+        let result: Vec<Transaction> = diesel::insert_into(transactions)
+            .values(&mock_transactions)
+            .get_results(conn)
+            .unwrap();
+        log::info!("Result: {:?}", result);
+        log::info!("Mock transactions inserted");
+        assert_eq!(result.len(), count);
+    }
+
+    #[test]
+    fn test_create_txs() {
+        env_logger::try_init().ok();
+        log::info!("Connecting to database");
+        let mut conn =
+            PgConnection::establish("postgres://postgres:postgres@localhost:5432/tier_1")
+                .expect("Error connecting to database");
+
+        log::info!("Creating mock transactions");
+        create_mock_transactions(&mut conn, 10);
     }
 }

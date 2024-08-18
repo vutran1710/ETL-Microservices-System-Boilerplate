@@ -38,14 +38,12 @@ pub enum Table {
 #[cfg(test)]
 mod tests {
 
-    use super::*;
-
     #[test]
+    #[cfg(feature = "tier_1")]
     fn test_view_table_enum() {
         env_logger::try_init().ok();
-        #[cfg(feature = "tier_1")]
-        let table = Table::Tier1(tier_1::Table::Transactions);
-        let table_str = serde_json::to_string(&table).unwrap();
+        let ex_table = super::Table::Tier1(crate::tier_1::Table::Transactions);
+        let table_str = serde_json::to_string(&ex_table).unwrap();
         log::info!("table_str: {}", table_str);
         assert_eq!(table_str, "\"transactions\"");
     }

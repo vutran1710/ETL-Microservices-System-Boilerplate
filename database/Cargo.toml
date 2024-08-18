@@ -18,6 +18,8 @@ eyre = { workspace = true }
 
 [dev-dependencies]
 env_logger = { workspace = true }
+rand = { workspace = true }
+
 
 [features]
 tier_1 = []
