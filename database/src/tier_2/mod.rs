@@ -3,6 +3,7 @@ mod schemas;
 use crate::QueryWithRange;
 use crate::Range;
 use crate::RowStream;
+use chrono::Utc;
 use diesel::data_types::PgTimestamp;
 use diesel::insert_into;
 use diesel::prelude::*;
@@ -22,7 +23,7 @@ pub enum Action {
 }
 
 // Database tables are defined here ------------------------------------------------------
-#[derive(Queryable, Selectable, Insertable)]
+#[derive(Queryable, Selectable, Insertable, Debug)]
 #[diesel(table_name = schemas::buy_sell)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct BuySell {
@@ -64,10 +65,13 @@ pub struct Filter {
 
 impl From<&BuySell> for QueryWithRange {
     fn from(value: &BuySell) -> Self {
+        let datetime =
+            chrono::DateTime::<Utc>::from_timestamp(value.timestamp.0 / 1000, 0).unwrap();
+        let datetime = datetime.naive_utc();
         QueryWithRange {
-            range: Range::Numeric {
-                from: value.range_index,
-                to: value.range_index,
+            range: Range::Date {
+                from: datetime.date(),
+                to: datetime.date(),
             },
             filters: json!({ "user": value.user }),
         }

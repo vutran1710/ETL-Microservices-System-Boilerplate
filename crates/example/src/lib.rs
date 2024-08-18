@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use clap::Parser;
 use common::messages::ChangeSet;
 use common::ETLTrait;
 use database::create_pg_connection;
@@ -15,13 +14,6 @@ use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::sync::Arc;
 use std::sync::Mutex;
-
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-    #[arg(short, long)]
-    source_db: String,
-}
 
 #[allow(dead_code)]
 pub struct Etl {

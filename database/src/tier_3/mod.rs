@@ -4,20 +4,35 @@ use crate::QueryWithRange;
 use crate::Range;
 use crate::RowStream;
 use chrono::NaiveDate;
-use diesel::data_types::PgNumeric;
 use diesel::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
 use strum::EnumString;
 
 // Database tables are defined here ------------------------------------------------------
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Insertable, Debug)]
 #[diesel(table_name = schemas::balance_per_date)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct BalancePerDate {
     pub user: String,
-    pub balance: PgNumeric,
+    pub balance: i64,
     pub date: NaiveDate,
+}
+
+impl BalancePerDate {
+    pub fn insert_many(pool: &mut PgConnection, rows: Vec<Self>) -> eyre::Result<()> {
+        use diesel::pg::upsert::excluded;
+        use schemas::balance_per_date::dsl::*;
+
+        let inserted: Vec<Self> = diesel::insert_into(balance_per_date)
+            .values(&rows)
+            .on_conflict((user, date))
+            .do_update()
+            .set(balance.eq(excluded(balance)))
+            .get_results(pool)?;
+        log::info!("Inserted {} rows", inserted.len());
+        Ok(())
+    }
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]

@@ -667,7 +667,6 @@ name = "example"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap",
  "common",
  "database",
  "eyre",
@@ -682,8 +681,16 @@ dependencies = [
 name = "example2"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "chrono",
+ "common",
  "database",
  "eyre",
+ "futures-util",
+ "kanal",
+ "log",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -11,8 +11,8 @@ use mq::MessageQueue;
 use mq::MessageQueueTrait;
 use server::Server;
 
-#[cfg(feature = "example")]
-use example::Etl;
+#[cfg(feature = "example2")]
+use example2::Etl;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
