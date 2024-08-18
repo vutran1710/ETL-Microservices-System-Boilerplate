@@ -1,7 +1,8 @@
 use diesel::data_types::PgTimestamp;
 use diesel::prelude::*;
 mod schemas;
-use crate::OrderingID;
+use crate::QueryWithRange;
+use crate::Range;
 use crate::RowStream;
 use serde::Deserialize;
 use serde::Serialize;
@@ -28,27 +29,23 @@ pub enum Table {
     Transactions,
 }
 
-// QueryID is used to query the database -------------------------------------------------
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct QueryID {
-    pub block_tx_index: i64,
-}
-
-impl OrderingID for QueryID {}
-
 // Implement RowStream for Transaction -------------------------------------------------------
-impl RowStream<QueryID> for Transaction {
-    fn query_range(
-        pool: &mut PgConnection,
-        range: &crate::RangeID<QueryID>,
-    ) -> eyre::Result<Vec<Self>> {
-        use schemas::transactions::dsl::*;
-        let xfrom = range.from.clone();
-        let xto = range.to.clone();
-        let rows = transactions
-            .filter(block_number.ge(xfrom.block_tx_index))
-            .filter(block_number.le(xto.block_tx_index))
-            .load(pool)?;
-        Ok(rows)
+impl RowStream for Transaction {
+    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>> {
+        if let Range::Numeric {
+            from: range_from,
+            to: range_to,
+        } = query.range
+        {
+            use schemas::transactions::dsl::*;
+            let rows = transactions
+                .filter(block_tx_index.ge(range_from))
+                .filter(block_tx_index.le(range_to))
+                .load(pool)?;
+
+            Ok(rows)
+        } else {
+            Err(eyre::eyre!("Invalid range type"))
+        }
     }
 }

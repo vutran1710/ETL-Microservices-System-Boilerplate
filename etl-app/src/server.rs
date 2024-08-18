@@ -1,5 +1,4 @@
 use common::messages::Message;
-use database::OrderingID;
 use kanal::AsyncSender;
 use std::convert::Infallible;
 use warp::http::StatusCode;
@@ -26,10 +25,7 @@ impl Server {
         Ok(())
     }
 
-    pub async fn run<T: OrderingID>(
-        &self,
-        _message_sender: AsyncSender<Message<T>>,
-    ) -> eyre::Result<()> {
+    pub async fn run(&self, _message_sender: AsyncSender<Message>) -> eyre::Result<()> {
         log::info!("Starting WebAPI server for application administrating");
 
         let health_check_route_root =

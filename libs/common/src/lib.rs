@@ -5,12 +5,11 @@ use database::Table;
 use kanal::AsyncSender;
 use std::collections::HashMap;
 
-use database::OrderingID;
 use messages::ChangeSet;
 use messages::Message;
 
 #[async_trait]
-pub trait ETLTrait<T: OrderingID, P: OrderingID>: Send + Sync {
+pub trait ETLTrait: Send + Sync {
     async fn new(source: &str, sink: &str) -> eyre::Result<Self>
     where
         Self: Sized;
@@ -22,8 +21,8 @@ pub trait ETLTrait<T: OrderingID, P: OrderingID>: Send + Sync {
     /// Result is ChangeSet of the current tier
     async fn processing_changes(
         &self,
-        changes: HashMap<Table, ChangeSet<T>>,
-    ) -> eyre::Result<HashMap<Table, ChangeSet<P>>>;
+        changes: HashMap<Table, ChangeSet>,
+    ) -> eyre::Result<HashMap<Table, ChangeSet>>;
 
     /// Cancel the processing related to the tables
     /// Emit cancelling message to the emitter with the tables that are cancelled OF THE CURRENT TIER
@@ -38,8 +37,8 @@ pub trait ETLTrait<T: OrderingID, P: OrderingID>: Send + Sync {
     /// Process the message and send the result to the emitter
     async fn process_message(
         &self,
-        msg: Message<T>,
-        emitter: AsyncSender<Message<P>>,
+        msg: Message,
+        emitter: AsyncSender<Message>,
     ) -> eyre::Result<()> {
         log::info!("Processing message: \n{}", msg);
 
@@ -54,25 +53,24 @@ pub trait ETLTrait<T: OrderingID, P: OrderingID>: Send + Sync {
             return Ok(());
         }
 
-        match msg {
-            Message::DataStoreUpdated { tier: _, tables } => {
-                emitter
-                    .send(Message::DataStoreUpdated {
-                        tier: self.tier(),
-                        tables: self.processing_changes(tables).await?,
-                    })
-                    .await?;
-                Ok(())
+        let output = match msg {
+            Message::DataStoreUpdated { tables, tier: _ } => {
+                let changes = self.processing_changes(tables).await?;
+                Message::DataStoreUpdated {
+                    tables: changes,
+                    tier: self.tier(),
+                }
             }
             Message::CancelProcessing { tier: _, tables } => {
-                emitter
-                    .send(Message::CancelProcessing {
-                        tier: self.tier(),
-                        tables: self.cancel_processing(tables).await?,
-                    })
-                    .await?;
-                Ok(())
+                let result = self.cancel_processing(tables).await?;
+                Message::CancelProcessing {
+                    tier: self.tier(),
+                    tables: result,
+                }
             }
-        }
+        };
+
+        emitter.send(output).await?;
+        Ok(())
     }
 }

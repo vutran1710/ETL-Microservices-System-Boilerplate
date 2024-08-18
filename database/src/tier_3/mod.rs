@@ -1,6 +1,7 @@
 mod schemas;
 
-use crate::OrderingID;
+use crate::QueryWithRange;
+use crate::Range;
 use crate::RowStream;
 use chrono::NaiveDate;
 use diesel::data_types::PgNumeric;
@@ -26,29 +27,29 @@ pub enum Table {
     BalancePerDate,
 }
 
-// QueryID is used to query the database -------------------------------------------------
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct QueryID {
+#[derive(Deserialize, Serialize)]
+pub struct Filter {
     pub user: String,
-    pub date: NaiveDate,
 }
 
-impl OrderingID for QueryID {}
-
 // Implement RowStream for BalancePerDate -------------------------------------------------------
-impl RowStream<QueryID> for BalancePerDate {
-    fn query_range(
-        pool: &mut PgConnection,
-        range: &crate::RangeID<QueryID>,
-    ) -> eyre::Result<Vec<Self>> {
-        use schemas::balance_per_date::dsl::*;
-        let from = range.from.clone();
-        let to = range.to.clone();
-        let rows = balance_per_date
-            .filter(user.eq(from.user))
-            .filter(date.ge(from.date))
-            .filter(date.le(to.date))
-            .load(pool)?;
-        Ok(rows)
+impl RowStream for BalancePerDate {
+    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>> {
+        let user_filter: Filter = serde_json::from_value(query.filters.clone())?;
+        if let Range::Date {
+            from: from_date,
+            to: to_date,
+        } = query.range
+        {
+            use schemas::balance_per_date::dsl::*;
+            let rows = balance_per_date
+                .filter(user.eq(user_filter.user))
+                .filter(date.ge(from_date))
+                .filter(date.le(to_date))
+                .load(pool)?;
+            Ok(rows)
+        } else {
+            Err(eyre::eyre!("Invalid range type"))
+        }
     }
 }

@@ -8,14 +8,11 @@ use common::ETLTrait;
 use kanal::AsyncReceiver;
 use kanal::AsyncSender;
 use mq::MessageQueue;
+use mq::MessageQueueTrait;
 use server::Server;
 
 #[cfg(feature = "example")]
 use example::Etl;
-#[cfg(feature = "example")]
-use example::SinkOrderingID;
-#[cfg(feature = "example")]
-use example::SourceOrderingID;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -33,8 +30,8 @@ struct Args {
 async fn main_task(
     source: &str,
     sink: &str,
-    receiver: AsyncReceiver<Message<SourceOrderingID>>,
-    emitter: AsyncSender<Message<SinkOrderingID>>,
+    receiver: AsyncReceiver<Message>,
+    emitter: AsyncSender<Message>,
 ) -> eyre::Result<()> {
     let etl = Etl::new(source, sink).await?;
 

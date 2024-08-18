@@ -14,9 +14,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-pub use database::tier_1::QueryID as SourceOrderingID;
-pub use database::tier_2::QueryID as SinkOrderingID;
-
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
@@ -34,7 +31,7 @@ impl Etl {
     async fn process_transaction(
         &self,
         transaction: tier_1::Transaction,
-        _sink_changes: &mut HashMap<Table, ChangeSet<SinkOrderingID>>,
+        _sink_changes: &mut HashMap<Table, ChangeSet>,
     ) -> eyre::Result<()> {
         let _sell = tier_2::BuySell {
             user: transaction.from,
@@ -54,7 +51,7 @@ impl Etl {
 }
 
 #[async_trait]
-impl ETLTrait<SourceOrderingID, SinkOrderingID> for Etl {
+impl ETLTrait for Etl {
     async fn new(source: &str, sink: &str) -> eyre::Result<Self> {
         Ok(Etl {
             source: Arc::new(Mutex::new(create_pg_connection(source))),
@@ -68,16 +65,14 @@ impl ETLTrait<SourceOrderingID, SinkOrderingID> for Etl {
 
     async fn processing_changes(
         &self,
-        changes: HashMap<Table, ChangeSet<SourceOrderingID>>,
-    ) -> eyre::Result<HashMap<Table, ChangeSet<SinkOrderingID>>> {
-        let mut sink_changes: HashMap<Table, ChangeSet<SinkOrderingID>> = HashMap::new();
+        changes: HashMap<Table, ChangeSet>,
+    ) -> eyre::Result<HashMap<Table, ChangeSet>> {
+        let mut sink_changes: HashMap<Table, ChangeSet> = HashMap::new();
 
         for (table, changes) in changes.iter() {
-            let ranges = changes.get_change_ranges();
-
             match table {
                 Table::Tier1(tier_1::Table::Transactions) => {
-                    let stream = tier_1::Transaction::query(self.source.clone(), &ranges);
+                    let stream = tier_1::Transaction::query(self.source.clone(), &changes.ranges());
                     pin_mut!(stream);
                     while let Some(row) = stream.next().await {
                         self.process_transaction(row, &mut sink_changes).await?;

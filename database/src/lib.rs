@@ -1,5 +1,5 @@
-mod interfaces;
-pub use interfaces::*;
+mod query_interfaces;
+pub use query_interfaces::*;
 use serde::Deserialize;
 use serde::Serialize;
 use strum::Display;

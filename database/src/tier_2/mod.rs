@@ -1,6 +1,7 @@
 mod schemas;
 
-use crate::OrderingID;
+use crate::QueryWithRange;
+use crate::Range;
 use crate::RowStream;
 use diesel::data_types::PgTimestamp;
 use diesel::prelude::*;
@@ -36,29 +37,31 @@ pub enum Table {
     BuySell,
 }
 
-// QueryID is used to query the database -------------------------------------------------
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct QueryID {
+#[derive(Deserialize, Serialize)]
+pub struct Filter {
     pub user: String,
-    pub block_tx_index: i64,
 }
 
-impl OrderingID for QueryID {}
-
 // Implement RowStream for BuySell -------------------------------------------------------
-impl RowStream<QueryID> for BuySell {
-    fn query_range(
-        pool: &mut PgConnection,
-        range: &crate::RangeID<QueryID>,
-    ) -> eyre::Result<Vec<Self>> {
+impl RowStream for BuySell {
+    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>> {
         use schemas::buy_sell::dsl::*;
-        let from = range.from.clone();
-        let to = range.to.clone();
-        let rows = buy_sell
-            .filter(user.eq(from.user))
-            .filter(block_tx_index.ge(from.block_tx_index))
-            .filter(block_tx_index.le(to.block_tx_index))
-            .load(pool)?;
-        Ok(rows)
+        let user_filter: Filter = serde_json::from_value(query.filters.clone())?;
+
+        if let Range::Numeric {
+            from: range_from,
+            to: range_to,
+        } = query.range
+        {
+            let rows = buy_sell
+                .filter(user.eq(user_filter.user))
+                .filter(block_tx_index.ge(range_from))
+                .filter(block_tx_index.le(range_to))
+                .load(pool)?;
+
+            Ok(rows)
+        } else {
+            Err(eyre::eyre!("Invalid range type"))
+        }
     }
 }
