@@ -17,13 +17,13 @@ use example::Etl;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long)]
+    #[arg(long, env = "ETL_SOURCE")]
     source: String,
 
-    #[arg(short, long)]
+    #[arg(long, env = "ETL_SINK")]
     sink: String,
 
-    #[arg(short, long)]
+    #[arg(long, env = "ETL_SERVER_PORT")]
     port: u16,
 }
 
@@ -47,7 +47,7 @@ async fn main() -> eyre::Result<()> {
     env_logger::try_init().ok();
 
     let Args { port, source, sink } = Args::parse();
-
+    log::info!("Binding port: {}", port);
     let msg_queue = MessageQueue::new().await?;
     let server = Server::new(port);
 

@@ -21,19 +21,19 @@ use kanal::AsyncSender;
 #[command(author, version, about, long_about = None)]
 pub struct PubSubArgs {
     /// Google Cloud PubSub project ID
-    #[arg(short, long)]
+    #[arg(long)]
     pub project_id: String,
 
     /// Google Cloud PubSub client ID
-    #[arg(short, long)]
+    #[arg(long)]
     pub client_id: String,
 
     /// Google Cloud PubSub client secret
-    #[arg(short, long)]
+    #[arg(long)]
     pub client_secret: String,
 
     /// Google Cloud PubSub client refresh token
-    #[arg(short, long)]
+    #[arg(long)]
     pub refresh_token: String,
 }
 
@@ -41,10 +41,12 @@ pub struct PubSubArgs {
 #[command(author, version, about, long_about = None)]
 pub struct QueueArgs {
     /// Database connect options
+    #[cfg(feature = "pubsub")]
     #[command(flatten, next_help_heading = "PubSub client")]
-    pub pubsub: Option<PubSubArgs>,
+    pub pubsub: PubSubArgs,
+    #[cfg(feature = "rabbitmq")]
     #[command(flatten, next_help_heading = "RabbitMQ client")]
-    pub rabbitmq: Option<RabbitMQArgs>,
+    pub rabbitmq: RabbitMQArgs,
 }
 
 pub enum MessageQueue {
@@ -65,30 +67,22 @@ pub trait MessageQueueTrait {
 
 impl MessageQueue {
     pub async fn new() -> eyre::Result<Self> {
-        let QueueArgs { pubsub, rabbitmq } = QueueArgs::parse();
-
-        #[allow(dead_code)]
-        if let Some(_pubsub_args) = pubsub {
-            #[cfg(feature = "pubsub")]
-            {
-                log::info!("Using Google Cloud PubSub");
-                let config = PubSubClientConfig::default().with_auth().await?;
-                let client = PubSubClient::new(config).await?;
-                return Ok(MessageQueue::PubSub(client));
-            }
+        #[cfg(feature = "pubsub")]
+        {
+            let QueueArgs { pubsub } = QueueArgs::parse();
+            let pubsub = pubsub.unwrap();
+            let config = PubSubClientConfig::default().with_auth().await?;
+            let client = PubSubClient::new(config).await?;
+            return Ok(MessageQueue::PubSub(client));
         }
 
-        #[allow(dead_code)]
-        if let Some(_rabbitmq_args) = rabbitmq {
-            #[cfg(feature = "rabbitmq")]
-            {
-                log::info!("Using RabbitMQ");
-                let client = RabbitMQ::new(&_rabbitmq_args).await?;
-                return Ok(MessageQueue::RabbitMQ(client));
-            }
+        #[cfg(feature = "rabbitmq")]
+        {
+            log::info!("Using RabbitMQ");
+            let QueueArgs { rabbitmq: args } = QueueArgs::parse();
+            let client = RabbitMQ::new(&args).await?;
+            return Ok(MessageQueue::RabbitMQ(client));
         }
-
-        unimplemented!("No message queue client specified")
     }
 }
 

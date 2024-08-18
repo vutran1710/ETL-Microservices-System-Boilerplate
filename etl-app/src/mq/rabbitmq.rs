@@ -18,15 +18,15 @@ use kanal::AsyncSender;
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
-    #[arg(short, long)]
+    #[arg(long, env = "RABBITMQ_SOURCE_QUEUE")]
     pub source_queue: String,
-    #[arg(short, long)]
+    #[arg(long, env = "RABBITMQ_SINK_QUEUE")]
     pub sink_queue: String,
-    #[arg(short, long)]
+    #[arg(long, env = "RABBITMQ_HOST", default_value = "localhost")]
     pub host: String,
-    #[arg(short, long)]
+    #[arg(long, env = "RABBITMQ_USERNAME", default_value = "guest")]
     pub username: String,
-    #[arg(short, long)]
+    #[arg(long, env = "RABBITMQ_PASSWORD", default_value = "guest")]
     pub password: String,
 }
 
