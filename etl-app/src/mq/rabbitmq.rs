@@ -23,7 +23,7 @@ use tokio::select;
 #[derive(Debug, Parser, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
-    #[arg(long, env = "RABBITMQ_EXCHANGE", default_value = "etl_exchange")]
+    #[arg(long, env = "RABBITMQ_EXCHANGE", default_value = "etl")]
     pub exchange: String,
     #[arg(long, env = "RABBITMQ_SOURCE_QUEUE", default_value = "etl_tier_1")]
     pub source_queue: String,
@@ -87,20 +87,16 @@ impl RabbitMQ {
 }
 
 impl RabbitMQ {
-    async fn create_channel(&self, queue: &str, routing_key: &str) -> eyre::Result<Channel> {
+    async fn create_channel(&self, exchange: &str, queue: &str) -> eyre::Result<Channel> {
         let channel = self.connection.open_channel(None).await?;
         channel
-            .exchange_declare(ExchangeDeclareArguments::new(&self.args.exchange, "direct"))
+            .exchange_declare(ExchangeDeclareArguments::new(exchange, "topic"))
             .await?;
         channel
             .queue_declare(QueueDeclareArguments::new(queue))
             .await?;
         channel
-            .queue_bind(QueueBindArguments::new(
-                queue,
-                &self.args.exchange,
-                routing_key,
-            ))
+            .queue_bind(QueueBindArguments::new(queue, exchange, queue))
             .await?;
         Ok(channel)
     }
@@ -117,19 +113,17 @@ impl MessageQueueTrait for RabbitMQ {
 
         let task_consume = || async move {
             let channel = self
-                .create_channel(&self.args.source_queue, "tier_1")
+                .create_channel(&self.args.exchange, &self.args.source_queue)
                 .await
                 .unwrap();
 
             // FIXME: dynamic consumer name
-            let consumer_tag = "elt-source-consumer";
-            let consume_args = BasicConsumeArguments::new(&self.args.source_queue, consumer_tag);
             channel
                 .basic_consume(
                     RabbitMqConsumer {
                         sender: source_sender.clone(),
                     },
-                    consume_args,
+                    BasicConsumeArguments::new(&self.args.source_queue, "example_consumer"),
                 )
                 .await
                 .expect("Failed to start consuming messages");
@@ -146,10 +140,11 @@ impl MessageQueueTrait for RabbitMQ {
         // Publishing message
         let task_publish = || async move {
             let channel = self
-                .create_channel(&self.args.sink_queue, "tier_2")
+                .create_channel(&self.args.exchange, &self.args.sink_queue)
                 .await
                 .unwrap();
-            let publish_args = BasicPublishArguments::new(&self.args.exchange, "");
+            let publish_args =
+                BasicPublishArguments::new(&self.args.exchange, &self.args.sink_queue);
 
             while let Ok(msg) = sink_receiver.recv().await {
                 let message = serde_json::to_string(&msg).unwrap();
