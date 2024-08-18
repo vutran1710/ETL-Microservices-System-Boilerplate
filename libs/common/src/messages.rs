@@ -20,7 +20,6 @@ impl ChangeSet {
 
     // NOTE: add a range to the ChangeSet
     // But only accept range of same type
-    // FIXME: join the ranges that are adjacent
     pub fn push(&mut self, query: QueryWithRange) -> bool {
         if self.0.len() == 0 {
             self.0.push(query);
@@ -30,16 +29,29 @@ impl ChangeSet {
         let last = self.0.last().unwrap();
         match (&last.range, &query.range) {
             (Range::Numeric { .. }, Range::Numeric { .. }) => {
+                for q in self.0.iter_mut() {
+                    if q.range.overlap(&query.range) && q.filters == query.filters {
+                        let new_range = q.range.join(&query.range);
+                        q.range = new_range;
+                        return true;
+                    }
+                }
                 self.0.push(query);
                 true
             }
             (Range::Date { .. }, Range::Date { .. }) => {
+                for q in self.0.iter_mut() {
+                    if q.range.overlap(&query.range) && q.filters == query.filters {
+                        let new_range = q.range.join(&query.range);
+                        q.range = new_range;
+                        return true;
+                    }
+                }
                 self.0.push(query);
                 true
             }
             _ => false,
         }
-        // FIXME: check for overlapping ranges
     }
 
     /// ChangeSet must not have overlapping ranges

@@ -45,6 +45,32 @@ impl Range {
             _ => false,
         }
     }
+
+    pub fn join(&self, other: &Self) -> Self {
+        match (self, other) {
+            (
+                Range::Numeric { from, to },
+                Range::Numeric {
+                    from: other_from,
+                    to: other_to,
+                },
+            ) => Range::Numeric {
+                from: std::cmp::min(*from, *other_from),
+                to: std::cmp::max(*to, *other_to),
+            },
+            (
+                Range::Date { from, to },
+                Range::Date {
+                    from: other_from,
+                    to: other_to,
+                },
+            ) => Range::Date {
+                from: std::cmp::min(*from, *other_from),
+                to: std::cmp::max(*to, *other_to),
+            },
+            _ => panic!("Cannot join different types of ranges"),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
