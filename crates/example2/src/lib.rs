@@ -70,7 +70,7 @@ impl ETLTrait for Etl {
     }
 
     fn tier(&self) -> i64 {
-        1
+        2
     }
 
     async fn processing_changes(

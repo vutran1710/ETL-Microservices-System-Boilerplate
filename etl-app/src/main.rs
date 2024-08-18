@@ -14,6 +14,9 @@ use server::Server;
 #[cfg(feature = "example2")]
 use example2::Etl;
 
+#[cfg(feature = "example")]
+use example::Etl;
+
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {

@@ -25,9 +25,9 @@ use tokio::select;
 pub struct Args {
     #[arg(long, env = "RABBITMQ_EXCHANGE", default_value = "etl")]
     pub exchange: String,
-    #[arg(long, env = "RABBITMQ_SOURCE_QUEUE", default_value = "etl_tier_1")]
+    #[arg(long, env = "RABBITMQ_SOURCE_QUEUE", default_value = "etl_tier_2")]
     pub source_queue: String,
-    #[arg(long, env = "RABBITMQ_SINK_QUEUE", default_value = "etl_tier_2")]
+    #[arg(long, env = "RABBITMQ_SINK_QUEUE", default_value = "etl_tier_3")]
     pub sink_queue: String,
     #[arg(long, env = "RABBITMQ_HOST", default_value = "localhost")]
     pub host: String,
