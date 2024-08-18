@@ -54,4 +54,26 @@ pub struct Args {
 $ cargo run -p etl-app -F example_with_rabbitmq
 ```
 
-When run, application has a api server that user can send manual processing request at `http://{host}:{port}/process`
+- When run, application has a api server that user can send manual processing request at `http://{host}:{port}/process`. This api accepts POST only.
+- Checkout `libs/common/messages` for the structure of the payload.
+- Example query for POST payload:
+```json
+{
+    "DataStoreUpdated": {
+        "tier": 1,
+        "tables": {
+            "transactions": [
+                {
+                    "range": {
+                      "from": 1,
+                      "to": 10
+                    },
+                    "filters": {
+                      "user": "abcde"
+                    }
+                }
+            ]
+        }
+    }
+}
+```
