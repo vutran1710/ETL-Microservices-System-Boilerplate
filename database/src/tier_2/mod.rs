@@ -35,9 +35,16 @@ pub struct BuySell {
 
 impl BuySell {
     pub fn insert_many(pool: &mut PgConnection, rows: Vec<Self>) -> eyre::Result<()> {
+        use diesel::pg::upsert::excluded;
         use schemas::buy_sell::dsl::*;
 
-        insert_into(buy_sell).values(&rows).execute(pool)?;
+        let inserted: Vec<Self> = insert_into(buy_sell)
+            .values(&rows)
+            .on_conflict((user, range_index))
+            .do_update()
+            .set(amount.eq(excluded(amount)))
+            .get_results(pool)?;
+        log::info!("Inserted {} rows", inserted.len());
         Ok(())
     }
 }

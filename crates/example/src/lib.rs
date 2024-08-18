@@ -36,6 +36,7 @@ fn process_transaction(
     transaction: tier_1::Transaction,
     sink_changes: &mut HashMap<Table, ChangeSet>,
 ) -> eyre::Result<()> {
+    log::info!("Processing transaction: {:?}", transaction);
     let sell = tier_2::BuySell {
         user: transaction.from,
         amount: transaction.value * -1,
@@ -88,11 +89,14 @@ impl ETLTrait for Etl {
         let mut sink_changes: HashMap<Table, ChangeSet> = HashMap::new();
 
         for (table, changes) in changes.iter() {
+            log::info!("Processing changes for table: {:?}", table);
             match table {
                 Table::Tier1(tier_1::Table::Transactions) => {
+                    log::info!("Processing transactions");
                     let stream = tier_1::Transaction::query(self.source.clone(), &changes.ranges());
                     pin_mut!(stream);
                     while let Some(row) = stream.next().await {
+                        log::info!("Processing row: {:?}", row);
                         let mut pool = self.sink.lock().unwrap();
                         let pool = pool.deref_mut();
                         process_transaction(pool, row, &mut sink_changes)?;

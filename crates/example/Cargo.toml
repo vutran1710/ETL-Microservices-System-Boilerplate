@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-database = { workspace = true, features = ["tier_1", "tier_2", "tier_3"] }
+database = { workspace = true, features = ["tier_1", "tier_2"] }
 clap = { workspace = true }
 eyre = { workspace = true }
 common = { workspace = true }
@@ -13,3 +13,4 @@ async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 futures-util = { workspace = true }
+log = { workspace = true }

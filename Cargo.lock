@@ -673,6 +673,7 @@ dependencies = [
  "eyre",
  "futures-util",
  "kanal",
+ "log",
  "serde",
  "serde_json",
 ]

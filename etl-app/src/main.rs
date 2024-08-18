@@ -17,13 +17,21 @@ use example::Etl;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(long, env = "ETL_SOURCE")]
+    #[arg(
+        long,
+        env = "ETL_SOURCE",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
     source: String,
 
-    #[arg(long, env = "ETL_SINK")]
+    #[arg(
+        long,
+        env = "ETL_SINK",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
     sink: String,
 
-    #[arg(long, env = "ETL_SERVER_PORT")]
+    #[arg(long, env = "ETL_SERVER_PORT", default_value = "8080")]
     port: u16,
 }
 

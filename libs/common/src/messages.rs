@@ -139,5 +139,32 @@ mod tests {
         });
 
         assert_eq!(actual_value, expected_value);
+
+        let example_payload = r#"{
+            "DataStoreUpdated": {
+                "tier": 0,
+                "tables": {
+                    "transactions": [
+                        {
+                            "range": {
+                            "from": 1,
+                            "to": 10
+                            },
+                            "filters": null
+                        }
+                    ]
+                }
+            }
+        }"#;
+        let deserialized: Message = serde_json::from_str(example_payload).unwrap();
+        if let Message::DataStoreUpdated { tier, tables } = deserialized {
+            assert_eq!(tier, 0);
+            assert_eq!(tables.len(), 1);
+            let changes = tables.get(&Table::Tier1(Tier1::Transactions)).unwrap();
+            assert_eq!(changes.ranges().len(), 1);
+            assert_eq!(changes.ranges()[0].filters, serde_json::Value::Null);
+        } else {
+            panic!("Deserialization failed");
+        }
     }
 }

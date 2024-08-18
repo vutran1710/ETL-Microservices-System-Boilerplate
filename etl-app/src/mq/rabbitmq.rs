@@ -1,26 +1,33 @@
 use super::MessageQueueTrait;
-use amqprs::callbacks::DefaultChannelCallback;
+
 use amqprs::callbacks::DefaultConnectionCallback;
 use amqprs::channel::BasicConsumeArguments;
 use amqprs::channel::BasicPublishArguments;
+use amqprs::channel::ExchangeDeclareArguments;
+use amqprs::channel::QueueBindArguments;
 use amqprs::channel::QueueDeclareArguments;
+use amqprs::channel::{BasicAckArguments, Channel};
 use amqprs::connection::Connection;
 use amqprs::connection::OpenConnectionArguments;
-use amqprs::consumer::DefaultConsumer;
+use amqprs::consumer::AsyncConsumer;
 use amqprs::BasicProperties;
+use amqprs::Deliver;
 use async_trait::async_trait;
 use clap::Parser;
 use common::messages::Message;
 use eyre::Result;
 use kanal::AsyncReceiver;
 use kanal::AsyncSender;
+use tokio::select;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
-    #[arg(long, env = "RABBITMQ_SOURCE_QUEUE")]
+    #[arg(long, env = "RABBITMQ_EXCHANGE", default_value = "etl_exchange")]
+    pub exchange: String,
+    #[arg(long, env = "RABBITMQ_SOURCE_QUEUE", default_value = "etl_tier_1")]
     pub source_queue: String,
-    #[arg(long, env = "RABBITMQ_SINK_QUEUE")]
+    #[arg(long, env = "RABBITMQ_SINK_QUEUE", default_value = "etl_tier_2")]
     pub sink_queue: String,
     #[arg(long, env = "RABBITMQ_HOST", default_value = "localhost")]
     pub host: String,
@@ -31,10 +38,36 @@ pub struct Args {
 }
 
 pub struct RabbitMQ {
-    source_channel: amqprs::channel::Channel,
-    sink_channel: amqprs::channel::Channel,
-    source_queue: String,
-    sink_queue: String,
+    connection: Connection,
+    args: Args,
+}
+
+struct RabbitMqConsumer {
+    sender: AsyncSender<Message>,
+}
+
+#[async_trait]
+impl AsyncConsumer for RabbitMqConsumer {
+    async fn consume(
+        &mut self,
+        channel: &Channel,
+        delivery: Deliver,
+        _basic_properties: BasicProperties,
+        content: Vec<u8>,
+    ) {
+        let message = String::from_utf8(content).unwrap();
+        log::info!("Received message: {}", message);
+        if let Ok(msg) = serde_json::from_str::<Message>(&message) {
+            log::info!("Valid message found: {}", msg);
+            self.sender.send(msg).await.unwrap();
+        }
+
+        // FIXME: Acknowledge the message, only after processing it
+        channel
+            .basic_ack(BasicAckArguments::new(delivery.delivery_tag(), false))
+            .await
+            .expect("Failed to acknowledge message");
+    }
 }
 
 impl RabbitMQ {
@@ -46,32 +79,30 @@ impl RabbitMQ {
             .register_callback(DefaultConnectionCallback)
             .await?;
 
-        let source_channel = connection.open_channel(None).await?;
-        source_channel
-            .register_callback(DefaultChannelCallback)
-            .await?;
-
-        let queue_args = QueueDeclareArguments::default()
-            .queue(args.source_queue.clone())
-            .finish();
-        source_channel.queue_declare(queue_args).await?;
-
-        let sink_channel = connection.open_channel(None).await?;
-        sink_channel
-            .register_callback(DefaultChannelCallback)
-            .await?;
-
-        let queue_args = QueueDeclareArguments::default()
-            .queue(args.sink_queue.clone())
-            .finish();
-        sink_channel.queue_declare(queue_args).await?;
-
         Ok(Self {
-            source_channel,
-            sink_channel,
-            source_queue: args.source_queue.clone(),
-            sink_queue: args.sink_queue.clone(),
+            connection,
+            args: args.to_owned(),
         })
+    }
+}
+
+impl RabbitMQ {
+    async fn create_channel(&self, queue: &str, routing_key: &str) -> eyre::Result<Channel> {
+        let channel = self.connection.open_channel(None).await?;
+        channel
+            .exchange_declare(ExchangeDeclareArguments::new(&self.args.exchange, "direct"))
+            .await?;
+        channel
+            .queue_declare(QueueDeclareArguments::new(queue))
+            .await?;
+        channel
+            .queue_bind(QueueBindArguments::new(
+                queue,
+                &self.args.exchange,
+                routing_key,
+            ))
+            .await?;
+        Ok(channel)
     }
 }
 
@@ -83,43 +114,60 @@ impl MessageQueueTrait for RabbitMQ {
         sink_receiver: AsyncReceiver<Message>,
     ) -> Result<()> {
         // Consuming message
-        let args = BasicConsumeArguments::new(&self.source_queue, "etl-mq-consumer");
-        let no_ack = args.no_ack;
 
         let task_consume = || async move {
-            while let Ok(message_as_str) = self
-                .source_channel
-                .basic_consume(DefaultConsumer::new(no_ack), args.clone())
+            let channel = self
+                .create_channel(&self.args.source_queue, "tier_1")
                 .await
-            {
-                let msg: Message =
-                    serde_json::from_str(&message_as_str).expect("Failed to deserialize message");
-                source_sender.send(msg).await.unwrap()
-            }
-            eyre::bail!("Failed received msg");
-            #[allow(unreachable_code)]
-            Ok::<(), eyre::Error>(()) // NOTE: just for the compiler to know the return type
+                .unwrap();
+
+            // FIXME: dynamic consumer name
+            let consumer_tag = "elt-source-consumer";
+            let consume_args = BasicConsumeArguments::new(&self.args.source_queue, consumer_tag);
+            channel
+                .basic_consume(
+                    RabbitMqConsumer {
+                        sender: source_sender.clone(),
+                    },
+                    consume_args,
+                )
+                .await
+                .expect("Failed to start consuming messages");
+
+            tokio::task::spawn(async move {
+                loop {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                }
+            })
+            .await
+            .expect("Task failed");
         };
 
         // Publishing message
         let task_publish = || async move {
-            let args = BasicPublishArguments::new(&self.sink_queue, "");
-            let properties = BasicProperties::default();
+            let channel = self
+                .create_channel(&self.args.sink_queue, "tier_2")
+                .await
+                .unwrap();
+            let publish_args = BasicPublishArguments::new(&self.args.exchange, "");
 
-            while let Ok(message) = sink_receiver.recv().await {
-                let message = serde_json::to_string(&message).expect("Failed to serialize message");
-
-                self.sink_channel
-                    .basic_publish(properties.clone(), message.into_bytes(), args.clone())
+            while let Ok(msg) = sink_receiver.recv().await {
+                let message = serde_json::to_string(&msg).unwrap();
+                channel
+                    .basic_publish(
+                        BasicProperties::default(),
+                        message.as_bytes().to_vec(),
+                        publish_args.clone(),
+                    )
                     .await
-                    .expect("Failed to publish message to MQ")
+                    .expect("Failed to publish message");
             }
-            eyre::bail!("Sink receiver closed");
-            #[allow(unreachable_code)]
-            Ok::<(), eyre::Error>(()) // NOTE: just for the compiler to know the return type
         };
 
-        tokio::try_join!(task_consume(), task_publish())?;
+        select! {
+            _ = task_consume() => {},
+            _ = task_publish() => {},
+        }
 
         eyre::bail!("RabbitMQ exited unexpectedly")
     }

@@ -97,7 +97,7 @@ mod tests {
         env_logger::try_init().ok();
         log::info!("Connecting to database");
         let mut conn =
-            PgConnection::establish("postgres://postgres:postgres@localhost:5432/tier_1")
+            PgConnection::establish("postgres://postgres:postgres@localhost:5432/postgres")
                 .expect("Error connecting to database");
 
         log::info!("Creating mock transactions");
