@@ -31,13 +31,14 @@ example2 = { workspace = true, optional = true }
 
 [features]
 # Etl libs
-etl_example = ["example", "rabbitmq"]
+etl_example1 = ["example", "rabbitmq"]
 etl_example2 = ["example2", "rabbitmq"]
 
 # MQ selection
 pubsub = ["google-cloud-pubsub"]
 rabbitmq = ["amqprs"]
 
+
 # Build selection
-all = ["etl_example", "etl_example2"]
+all = ["etl_example1", "etl_example2"]
 default = ["etl_example2"]

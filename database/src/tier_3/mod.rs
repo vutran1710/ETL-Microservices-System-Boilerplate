@@ -61,7 +61,7 @@ impl RowStream for BalancePerDate {
             let rows = balance_per_date
                 .filter(user.eq(user_filter.user))
                 .filter(date.ge(from_date))
-                .filter(date.le(to_date))
+                .order((date, date.asc()))
                 .load(pool)?;
             Ok(rows)
         } else {

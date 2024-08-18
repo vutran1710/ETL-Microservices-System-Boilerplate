@@ -1,4 +1,4 @@
-use diesel::data_types::PgTimestamp;
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 mod schemas;
 use crate::QueryWithRange;
@@ -18,7 +18,7 @@ pub struct Transaction {
     pub from: String,
     pub to: String,
     pub value: i64,
-    pub timestamp: PgTimestamp,
+    pub timestamp: NaiveDateTime,
     // NOTE: range_index = block_number * 1000 + tx_index
     pub range_index: i64,
 }
@@ -76,7 +76,7 @@ mod tests {
                 from: users[i % users.len()].to_string(),
                 to: users[(i + 1) % users.len()].to_string(),
                 value: rng.gen_range(10..20),
-                timestamp: PgTimestamp(Utc::now().naive_utc().and_utc().timestamp()),
+                timestamp: Utc::now().naive_utc() - chrono::Duration::days((50 - i) as i64),
                 range_index: mock_range_index,
             };
             mock_transactions.push(transaction);

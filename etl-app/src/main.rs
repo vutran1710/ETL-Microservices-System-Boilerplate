@@ -11,10 +11,10 @@ use mq::MessageQueue;
 use mq::MessageQueueTrait;
 use server::Server;
 
-#[cfg(feature = "example2")]
+#[cfg(feature = "etl_example2")]
 use example2::Etl;
 
-#[cfg(feature = "example")]
+#[cfg(feature = "etl_example1")]
 use example::Etl;
 
 #[derive(Parser, Debug)]

@@ -3,6 +3,7 @@ use database::Range;
 use database::Table;
 use serde::Deserialize;
 use serde::Serialize;
+use serde_json::Value;
 use std::collections::HashMap;
 use std::fmt::Debug;
 
@@ -52,6 +53,29 @@ impl ChangeSet {
             }
             _ => false,
         }
+    }
+
+    pub fn lowest_ranges(&self) -> Self {
+        let mut lowests: HashMap<Value, Range> = HashMap::new();
+        for query in self.0.iter() {
+            let key = query.filters.clone();
+            if let Some(lowest) = lowests.get_mut(&key) {
+                if &query.range < lowest {
+                    *lowest = query.range.clone();
+                }
+            } else {
+                lowests.insert(key, query.range.clone());
+            }
+        }
+
+        let lowests = lowests
+            .into_iter()
+            .map(|(k, v)| QueryWithRange {
+                range: v,
+                filters: k,
+            })
+            .collect();
+        ChangeSet(lowests)
     }
 
     /// ChangeSet must not have overlapping ranges

@@ -72,6 +72,11 @@ impl AsyncConsumer for RabbitMqConsumer {
 
 impl RabbitMQ {
     pub async fn new(args: &Args) -> Result<Self> {
+        log::info!(
+            "Connecting to RabbitMQ: source={}, sink={}",
+            args.source_queue,
+            args.sink_queue
+        );
         let conn_args =
             OpenConnectionArguments::new(&args.host, 5672, &args.username, &args.password);
         let connection = Connection::open(&conn_args).await?;

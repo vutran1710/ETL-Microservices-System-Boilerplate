@@ -1,11 +1,9 @@
 use async_trait::async_trait;
 use chrono::NaiveDate;
-use chrono::Utc;
 use common::messages::ChangeSet;
 use common::ETLTrait;
 use database::create_pg_connection;
 use database::tier_2;
-use database::tier_2::BuySell;
 use database::tier_3::BalancePerDate;
 use database::PgConnection;
 use database::RowStream;
@@ -18,23 +16,19 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 type User = String;
-type StateKey = (User, NaiveDate);
-type BalanceState = HashMap<StateKey, i64>;
-
-fn to_state_key(value: &BuySell) -> (User, NaiveDate) {
-    let datetime = chrono::DateTime::<Utc>::from_timestamp(value.timestamp.0 / 1000, 0).unwrap();
-    let datetime = datetime.naive_utc();
-    (value.user.clone(), datetime.date())
-}
+type BalanceState = HashMap<User, Vec<(NaiveDate, i64)>>;
 
 fn state_to_rows(state: &BalanceState) -> Vec<BalancePerDate> {
     state
         .iter()
-        .map(|(k, v)| BalancePerDate {
-            user: k.0.clone(),
-            date: k.1,
-            balance: *v,
+        .map(|(k, v)| {
+            v.into_iter().map(|(date, balance)| BalancePerDate {
+                user: k.clone(),
+                date: date.clone(),
+                balance: balance.clone(),
+            })
         })
+        .flatten()
         .collect()
 }
 
@@ -48,12 +42,22 @@ impl Etl {}
 
 fn process_buy_sell(buy_sell: tier_2::BuySell, state: &mut BalanceState) -> eyre::Result<()> {
     log::info!("Processing buy-sell: {:?}", buy_sell);
-    let key = to_state_key(&buy_sell);
+    let user = buy_sell.user.clone();
+    let date = buy_sell.timestamp.date();
 
-    if let Some(balance) = state.get_mut(&key) {
-        *balance += buy_sell.amount;
+    if state.contains_key(&user) {
+        let records = state.get_mut(&user).unwrap();
+        let last_record = records.last().unwrap();
+        let last_date = last_record.0;
+        let last_balance = last_record.1;
+        if last_date == date {
+            records.pop();
+            records.push((date, last_balance + buy_sell.amount));
+        } else {
+            records.push((date, last_balance + buy_sell.amount));
+        }
     } else {
-        state.insert(key, buy_sell.amount);
+        state.insert(user, vec![(date, buy_sell.amount)]);
     }
 
     Ok(())
@@ -84,6 +88,7 @@ impl ETLTrait for Etl {
             match table {
                 Table::Tier2(tier_2::Table::BuySell) => {
                     log::info!("Processing buy-sell");
+                    let changes = changes.lowest_ranges();
                     let stream = tier_2::BuySell::query(self.source.clone(), &changes.ranges());
                     pin_mut!(stream);
 

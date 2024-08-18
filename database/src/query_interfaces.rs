@@ -100,10 +100,31 @@ pub trait RowStream {
                         e
                     })
                     .unwrap();
+                log::info!("Get {} rows for query={:?}", rows.len(), query);
                 for row in rows {
                     yield row;
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_date_compare() {
+        let d1 = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
+        let d2 = chrono::NaiveDate::from_ymd_opt(2021, 1, 2).unwrap();
+        let d3 = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
+        assert!(d1 <= d2);
+        assert!(d1 <= d3);
+
+        let r = Range::Date { from: d1, to: d2 };
+        assert!(r.validate());
+
+        let r = Range::Date { from: d1, to: d3 };
+        assert!(r.validate());
     }
 }
