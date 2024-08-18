@@ -4,6 +4,7 @@ use crate::QueryWithRange;
 use crate::Range;
 use crate::RowStream;
 use diesel::data_types::PgTimestamp;
+use diesel::insert_into;
 use diesel::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
@@ -20,7 +21,7 @@ pub enum Action {
 }
 
 // Database tables are defined here ------------------------------------------------------
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = schemas::buy_sell)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct BuySell {
@@ -28,6 +29,15 @@ pub struct BuySell {
     pub amount: i64,
     pub timestamp: PgTimestamp,
     pub block_tx_index: i64,
+}
+
+impl BuySell {
+    pub fn insert_many(pool: &mut PgConnection, rows: Vec<Self>) -> eyre::Result<()> {
+        use schemas::buy_sell::dsl::*;
+
+        insert_into(buy_sell).values(&rows).execute(pool)?;
+        Ok(())
+    }
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]

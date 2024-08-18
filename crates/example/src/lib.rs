@@ -6,11 +6,15 @@ use database::create_pg_connection;
 use database::tier_1;
 use database::tier_2;
 use database::PgConnection;
+use database::QueryWithRange;
+use database::Range;
 use database::RowStream;
 use database::Table;
 use futures_util::pin_mut;
 use futures_util::stream::StreamExt;
+use serde_json::json;
 use std::collections::HashMap;
+use std::ops::DerefMut;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -31,21 +35,49 @@ impl Etl {
     async fn process_transaction(
         &self,
         transaction: tier_1::Transaction,
-        _sink_changes: &mut HashMap<Table, ChangeSet>,
+        sink_changes: &mut HashMap<Table, ChangeSet>,
     ) -> eyre::Result<()> {
-        let _sell = tier_2::BuySell {
+        let sell = tier_2::BuySell {
             user: transaction.from,
             amount: transaction.value * -1,
             timestamp: transaction.timestamp,
             block_tx_index: transaction.block_tx_index,
         };
-        let _buy = tier_2::BuySell {
+        let q1 = QueryWithRange {
+            range: Range::Numeric {
+                from: sell.block_tx_index,
+                to: sell.block_tx_index,
+            },
+            filters: json!({ "user": sell.user }),
+        };
+        let buy = tier_2::BuySell {
             user: transaction.to,
             amount: transaction.value,
             timestamp: transaction.timestamp,
             block_tx_index: transaction.block_tx_index,
         };
-        // Insert the sell and buy transactions into the sink
+        let q2 = QueryWithRange {
+            range: Range::Numeric {
+                from: buy.block_tx_index,
+                to: buy.block_tx_index,
+            },
+            filters: json!({ "user": buy.user }),
+        };
+
+        let mut pool = self.sink.lock().unwrap();
+        let pool = pool.deref_mut();
+        tier_2::BuySell::insert_many(pool, vec![sell, buy])?;
+
+        sink_changes
+            .entry(Table::Tier2(tier_2::Table::BuySell))
+            .or_insert(ChangeSet::new())
+            .push(q1);
+
+        sink_changes
+            .entry(Table::Tier2(tier_2::Table::BuySell))
+            .or_insert(ChangeSet::new())
+            .push(q2);
+
         Ok(())
     }
 }
