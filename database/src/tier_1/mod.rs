@@ -19,8 +19,6 @@ pub struct Transaction {
     pub to: String,
     pub value: i64,
     pub timestamp: NaiveDateTime,
-    // NOTE: range_index = block_number * 1000 + tx_index
-    pub range_index: i64,
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]
@@ -35,14 +33,14 @@ pub enum Table {
 impl RowStream for Transaction {
     fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>> {
         if let Range::Numeric {
-            from: range_from,
-            to: range_to,
+            from: from_timestamp,
+            to: to_timestamp,
         } = query.range
         {
             use schemas::transactions::dsl::*;
             let rows = transactions
-                .filter(range_index.ge(range_from))
-                .filter(range_index.le(range_to))
+                .filter(timestamp.ge(from_timestamp))
+                .filter(timestamp.le(to_timestamp))
                 .load(pool)?;
 
             Ok(rows)
@@ -75,9 +73,8 @@ mod tests {
                 tx_index: mock_tx_index as i16,
                 from: users[i % users.len()].to_string(),
                 to: users[(i + 1) % users.len()].to_string(),
-                value: rng.gen_range(10..20),
+                value: rng.gen_range(1..10),
                 timestamp: Utc::now().naive_utc() - chrono::Duration::days((50 - i) as i64),
-                range_index: mock_range_index,
             };
             mock_transactions.push(transaction);
         }
@@ -101,6 +98,6 @@ mod tests {
                 .expect("Error connecting to database");
 
         log::info!("Creating mock transactions");
-        create_mock_transactions(&mut conn, 10);
+        create_mock_transactions(&mut conn, 5);
     }
 }

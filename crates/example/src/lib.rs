@@ -33,13 +33,11 @@ fn process_transaction(
         user: transaction.from,
         amount: transaction.value * -1,
         timestamp: transaction.timestamp,
-        range_index: transaction.range_index,
     };
     let buy = tier_2::BuySell {
         user: transaction.to,
         amount: transaction.value,
         timestamp: transaction.timestamp,
-        range_index: transaction.range_index,
     };
 
     let q1 = QueryWithRange::from(&sell);

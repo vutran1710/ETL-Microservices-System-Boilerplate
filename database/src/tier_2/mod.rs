@@ -30,8 +30,6 @@ pub struct BuySell {
     pub user: String,
     pub amount: i64,
     pub timestamp: NaiveDateTime,
-    // NOTE: derived from Tx's range_index
-    pub range_index: i64,
 }
 
 impl BuySell {
@@ -41,7 +39,7 @@ impl BuySell {
 
         let inserted: Vec<Self> = insert_into(buy_sell)
             .values(&rows)
-            .on_conflict((user, range_index))
+            .on_conflict((user, timestamp))
             .do_update()
             .set(amount.eq(excluded(amount)))
             .get_results(pool)?;
@@ -88,8 +86,8 @@ impl RowStream for BuySell {
         {
             let rows = buy_sell
                 .filter(user.eq(user_filter.user))
-                .filter(range_index.ge(range_from))
-                .order(range_index.asc())
+                .filter(timestamp.ge(range_from))
+                .order(timestamp.asc())
                 .load(pool)?;
 
             Ok(rows)
