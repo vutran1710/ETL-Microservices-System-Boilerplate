@@ -1,0 +1,31 @@
+create table job_status (
+    job_id varchar(255) not null,
+    request_range_start int not null,
+    request_range_end int not null,
+    progress_range_start int not null,
+    progress_range_end int not null,
+    status status_type not null,
+)
+
+action <- read-only
+job -> sink-table-bak
+
+2 databases
+- main
+- sink-bak
+- share schema but no reference/foreign key on sink-bak
+
+1 message queue
+- notify data update-range
+- notify job-sync
+
+job-etl:
+- read from source
+- store progress to job_status
+- write to sink-table-bak
+- on finish, update job_status to done + send message to job-sync
+
+job-sync:
+- listen message from etl-job for running sync
+- sync from sink-table-bak to sink-table
+- clear sink-table-bak

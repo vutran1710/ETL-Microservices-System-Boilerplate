@@ -1,5 +1,5 @@
 CREATE TABLE buy_sell (
-    "user" VARCHAR NOT NULL,
+    "user" VARCHAR NOT NULL REFERRENCES users (address),
     amount BIGINT NOT NULL,
     timestamp TIMESTAMP NOT NULL,
     PRIMARY KEY ("user", timestamp)
