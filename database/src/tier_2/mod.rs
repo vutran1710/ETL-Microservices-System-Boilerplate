@@ -24,7 +24,7 @@ pub enum Action {
 }
 
 // Database tables are defined here ------------------------------------------------------
-#[derive(Queryable, Selectable, Insertable, Debug)]
+#[derive(Queryable, Selectable, Insertable, Debug, Clone)]
 #[diesel(table_name = schemas::buy_sell)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct BuySell {

@@ -10,7 +10,7 @@ use serde::Serialize;
 use strum::EnumString;
 
 // Database tables are defined here ------------------------------------------------------
-#[derive(Queryable, Selectable, Insertable, Debug)]
+#[derive(Queryable, Selectable, Insertable, Debug, Clone)]
 #[diesel(table_name = schemas::actions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Action {

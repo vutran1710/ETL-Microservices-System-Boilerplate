@@ -1,14 +1,11 @@
-use async_stream::stream;
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use diesel::PgConnection;
-use futures_core::stream::Stream;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Debug;
-use std::ops::DerefMut;
-use std::sync::Arc;
-use std::sync::Mutex;
+
+use std::thread;
 
 /// Range is [from, to]: both are inclusive
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -102,29 +99,34 @@ pub trait RowStream {
     fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>>
     where
         Self: Sized;
-    fn query(pool: Arc<Mutex<PgConnection>>, queries: &[QueryWithRange]) -> impl Stream<Item = Self>
-    where
-        Self: Sized,
-    {
-        stream! {
-            for query in queries {
-                if !query.range.validate() {
-                    log::error!("Invalid range: range={:?}", query.range);
-                    continue;
-                }
 
-                let rows = Self::query_range(pool.lock().unwrap().deref_mut(), query)
-                    .map_err(|e| {
-                        log::error!("Error querying range: range={:?} {:?}", query, e);
-                        e
-                    })
-                    .unwrap();
-                log::info!("Get {} rows for query={:?}", rows.len(), query);
-                for row in rows {
-                    yield row;
-                }
+    fn query(
+        pool: &mut PgConnection,
+        queries: &[QueryWithRange],
+    ) -> eyre::Result<kanal::Receiver<Self>>
+    where
+        Self: Sized + Send + Clone + Sync + 'static,
+    {
+        let (send, receiver) = kanal::bounded(1);
+        for query in queries {
+            if !query.range.validate() {
+                log::error!("Invalid range: range={:?}", query.range);
+                continue;
             }
+
+            let local_send = send.clone();
+            let rows = Self::query_range(pool, query)?;
+            log::info!("Get {} rows for query={:?}", rows.len(), query);
+            thread::spawn(move || {
+                for row in rows.iter() {
+                    if local_send.send(row.to_owned()).is_err() {
+                        break;
+                    }
+                }
+            });
         }
+
+        Ok(receiver)
     }
 }
 

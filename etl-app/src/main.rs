@@ -49,7 +49,7 @@ async fn main_task(
     receiver: AsyncReceiver<Message>,
     emitter: AsyncSender<Message>,
 ) -> eyre::Result<()> {
-    let etl = Etl::new(source, sink, job_manager).await?;
+    let etl = Etl::new(source, sink, job_manager)?;
 
     while let Ok(msg) = receiver.recv().await {
         etl.process_message(msg, emitter.clone()).await?;
