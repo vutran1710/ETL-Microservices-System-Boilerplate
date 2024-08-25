@@ -1,5 +1,6 @@
 use async_stream::stream;
 use chrono::NaiveDate;
+use chrono::NaiveDateTime;
 use diesel::PgConnection;
 use futures_core::stream::Stream;
 use serde::Deserialize;
@@ -11,16 +12,27 @@ use std::sync::Mutex;
 
 /// Range is [from, to]: both are inclusive
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum Range {
-    Numeric { from: i64, to: i64 },
-    Date { from: NaiveDate, to: NaiveDate },
+    Numeric {
+        from: i64,
+        to: i64,
+    },
+    DateTime {
+        from: NaiveDateTime,
+        to: NaiveDateTime,
+    },
+    Date {
+        from: NaiveDate,
+        to: NaiveDate,
+    },
 }
 
 impl Range {
     fn validate(&self) -> bool {
         match self {
             Range::Numeric { from, to } => from <= to,
+            Range::DateTime { from, to } => from <= to,
             Range::Date { from, to } => from <= to,
         }
     }
@@ -31,6 +43,13 @@ impl Range {
             (
                 Range::Numeric { from, to },
                 Range::Numeric {
+                    from: other_from,
+                    to: other_to,
+                },
+            ) => from <= other_to && other_from <= to,
+            (
+                Range::DateTime { from, to },
+                Range::DateTime {
                     from: other_from,
                     to: other_to,
                 },

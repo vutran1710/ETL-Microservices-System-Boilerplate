@@ -162,8 +162,10 @@ mod tests {
                     "transactions": [
                         {
                             "range": {
-                            "from": 1,
-                            "to": 10
+                                "numeric": {
+                                    "from": 1,
+                                    "to": 10
+                                }
                             },
                             "filters": {
                             "user": "abcde"
@@ -183,8 +185,10 @@ mod tests {
                     "transactions": [
                         {
                             "range": {
-                            "from": 1,
-                            "to": 10
+                                "numeric": {
+                                    "from": 1,
+                                    "to": 10
+                                }
                             },
                             "filters": null
                         }
