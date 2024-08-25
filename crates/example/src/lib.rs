@@ -24,6 +24,7 @@ pub struct Etl {
 }
 
 const JOB_ID: &str = "etl-example-1";
+const JOB_TIER: i32 = 1;
 
 impl Etl {}
 
@@ -69,7 +70,7 @@ impl ETLTrait for Etl {
         Ok(Etl {
             source: Arc::new(Mutex::new(create_pg_connection(source))),
             sink: Arc::new(Mutex::new(create_pg_connection(sink))),
-            jm: EtlJobManager::initialize(JOB_ID, job_manager),
+            jm: EtlJobManager::initialize(job_manager, JOB_ID, JOB_TIER),
         })
     }
 
@@ -81,8 +82,8 @@ impl ETLTrait for Etl {
         &self.jm
     }
 
-    fn tier(&self) -> i64 {
-        1
+    fn tier() -> i32 {
+        JOB_TIER
     }
 
     async fn processing_changes(

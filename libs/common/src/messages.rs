@@ -94,17 +94,17 @@ impl ChangeSet {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message {
     DataStoreUpdated {
-        tier: i64,
+        tier: i32,
         tables: HashMap<Table, ChangeSet>,
     },
     CancelProcessing {
-        tier: i64,
+        tier: i32,
         tables: Vec<Table>,
     },
 }
 
 impl Message {
-    pub fn get_tier(&self) -> i64 {
+    pub fn get_tier(&self) -> i32 {
         match self {
             Message::DataStoreUpdated { tier, .. } => *tier,
             Message::CancelProcessing { tier, .. } => *tier,

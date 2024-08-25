@@ -21,7 +21,7 @@ pub trait ETLTrait: Send + Sync {
     fn job_manager(&self) -> &EtlJobManager;
 
     /// Return the tier of the ETL, Tier must be static
-    fn tier(&self) -> i64;
+    fn tier() -> i32;
 
     /// Handle the changes and return the result
     /// Result is ChangeSet of the current tier
@@ -36,8 +36,8 @@ pub trait ETLTrait: Send + Sync {
 
     /// Validate message tier
     /// Current Tier App only process the message sent from the lower tier
-    fn validate_message_tier(&self, receiving_tier: i64) -> bool {
-        receiving_tier + 1 == self.tier()
+    fn validate_message_tier(&self, receiving_tier: i32) -> bool {
+        receiving_tier + 1 == Self::tier()
     }
 
     /// Process the message and send the result to the emitter
@@ -53,7 +53,7 @@ pub trait ETLTrait: Send + Sync {
             // instead of panicking
             log::error!(
                 "Tier mismatch: expected: {}, got: {}, skipping message processing",
-                self.tier(),
+                Self::tier(),
                 msg.get_tier()
             );
             return Ok(());
@@ -64,13 +64,13 @@ pub trait ETLTrait: Send + Sync {
                 let changes = self.processing_changes(tables).await?;
                 Message::DataStoreUpdated {
                     tables: changes,
-                    tier: self.tier(),
+                    tier: Self::tier(),
                 }
             }
             Message::CancelProcessing { tier: _, tables } => {
                 let result = self.cancel_processing(tables).await?;
                 Message::CancelProcessing {
-                    tier: self.tier(),
+                    tier: Self::tier(),
                     tables: result,
                 }
             }
