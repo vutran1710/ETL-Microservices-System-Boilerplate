@@ -54,7 +54,7 @@ impl RowStream for BalancePerDate {
         let user_filter: Filter = serde_json::from_value(query.filters.clone())?;
         if let Range::Date {
             from: from_date,
-            to: to_date,
+            to: _,
         } = query.range
         {
             use schemas::balance_per_date::dsl::*;

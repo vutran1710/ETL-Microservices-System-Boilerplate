@@ -3,6 +3,7 @@ mod schemas;
 use crate::QueryWithRange;
 use crate::Range;
 use crate::RowStream;
+use chrono::DateTime;
 use chrono::NaiveDateTime;
 
 use diesel::insert_into;
@@ -65,8 +66,8 @@ impl From<&BuySell> for QueryWithRange {
     fn from(value: &BuySell) -> Self {
         QueryWithRange {
             range: Range::Numeric {
-                from: value.range_index,
-                to: value.range_index,
+                from: value.timestamp.and_utc().timestamp(),
+                to: value.timestamp.and_utc().timestamp(),
             },
             filters: json!({ "user": value.user }),
         }
@@ -79,14 +80,11 @@ impl RowStream for BuySell {
         use schemas::buy_sell::dsl::*;
         let user_filter: Filter = serde_json::from_value(query.filters.clone())?;
 
-        if let Range::Numeric {
-            from: range_from,
-            to: _,
-        } = query.range
-        {
+        if let Range::Numeric { from, to: _ } = query.range {
+            let from_timestamp = DateTime::from_timestamp(from, 0).unwrap().naive_utc();
             let rows = buy_sell
                 .filter(user.eq(user_filter.user))
-                .filter(timestamp.ge(range_from))
+                .filter(timestamp.ge(from_timestamp))
                 .order(timestamp.asc())
                 .load(pool)?;
 

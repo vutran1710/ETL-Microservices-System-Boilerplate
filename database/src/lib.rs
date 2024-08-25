@@ -1,6 +1,7 @@
 mod etl_job_status;
 mod query_interfaces;
 
+pub use etl_job_status::EtlJobManager;
 pub use query_interfaces::*;
 use serde::Deserialize;
 use serde::Serialize;

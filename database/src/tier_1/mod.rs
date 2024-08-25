@@ -1,3 +1,4 @@
+use chrono::DateTime;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 mod schemas;
@@ -38,6 +39,12 @@ impl RowStream for Transaction {
         } = query.range
         {
             use schemas::transactions::dsl::*;
+            let from_timestamp = DateTime::from_timestamp(from_timestamp, 0)
+                .expect("bad timestamp")
+                .naive_utc();
+            let to_timestamp = DateTime::from_timestamp(to_timestamp, 0)
+                .expect("bad timestamp")
+                .naive_utc();
             let rows = transactions
                 .filter(timestamp.ge(from_timestamp))
                 .filter(timestamp.le(to_timestamp))
@@ -66,7 +73,6 @@ mod tests {
         for i in 0..count {
             let mock_block_number: i64 = (i as i64) + 5;
             let mock_tx_index = rng.gen_range(1..10);
-            let mock_range_index = mock_block_number * 1000 + mock_tx_index;
 
             let transaction = Transaction {
                 block_number: mock_block_number,

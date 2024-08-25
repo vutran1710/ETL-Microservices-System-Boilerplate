@@ -4,6 +4,7 @@ use common::ETLTrait;
 use database::create_pg_connection;
 use database::tier_1;
 use database::tier_2;
+use database::EtlJobManager;
 use database::PgConnection;
 use database::QueryWithRange;
 use database::RowStream;
@@ -19,7 +20,10 @@ use std::sync::Mutex;
 pub struct Etl {
     source: Arc<Mutex<PgConnection>>,
     sink: Arc<Mutex<PgConnection>>,
+    jm: EtlJobManager,
 }
+
+const JOB_ID: &str = "etl-example-1";
 
 impl Etl {}
 
@@ -61,11 +65,20 @@ fn process_transaction(
 // Implement ETLTrait here -----------------------------------------------------
 #[async_trait]
 impl ETLTrait for Etl {
-    async fn new(source: &str, sink: &str) -> eyre::Result<Self> {
+    async fn new(source: &str, sink: &str, job_manager: &str) -> eyre::Result<Self> {
         Ok(Etl {
             source: Arc::new(Mutex::new(create_pg_connection(source))),
             sink: Arc::new(Mutex::new(create_pg_connection(sink))),
+            jm: EtlJobManager::initialize(JOB_ID, job_manager),
         })
+    }
+
+    fn id(&self) -> String {
+        JOB_ID.to_string()
+    }
+
+    fn job_manager(&self) -> &EtlJobManager {
+        &self.jm
     }
 
     fn tier(&self) -> i64 {

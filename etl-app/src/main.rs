@@ -34,6 +34,13 @@ struct Args {
     )]
     sink: String,
 
+    #[arg(
+        long,
+        env = "ETL_JOB_MANAGER",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
+    job_manager: String,
+
     #[arg(long, env = "ETL_SERVER_PORT", default_value = "8080")]
     port: u16,
 }
@@ -41,10 +48,11 @@ struct Args {
 async fn main_task(
     source: &str,
     sink: &str,
+    job_manager: &str,
     receiver: AsyncReceiver<Message>,
     emitter: AsyncSender<Message>,
 ) -> eyre::Result<()> {
-    let etl = Etl::new(source, sink).await?;
+    let etl = Etl::new(source, sink, job_manager).await?;
 
     while let Ok(msg) = receiver.recv().await {
         etl.process_message(msg, emitter.clone()).await?;
@@ -57,7 +65,12 @@ async fn main_task(
 async fn main() -> eyre::Result<()> {
     env_logger::try_init().ok();
 
-    let Args { port, source, sink } = Args::parse();
+    let Args {
+        port,
+        source,
+        sink,
+        job_manager,
+    } = Args::parse();
     log::info!("Binding port: {}", port);
     let msg_queue = MessageQueue::new().await?;
     let server = Server::new(port);
@@ -67,7 +80,7 @@ async fn main() -> eyre::Result<()> {
 
     tokio::try_join!(
         msg_queue.run(input_sender.clone(), output_receiver),
-        main_task(&source, &sink, input_receiver, output_sender),
+        main_task(&source, &sink, &job_manager, input_receiver, output_sender),
         server.run(input_sender.clone())
     )?;
 

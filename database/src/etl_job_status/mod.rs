@@ -22,9 +22,9 @@ pub struct EtlJobStatus {
 
 #[derive(Clone)]
 pub struct EtlJobManager {
-    job_id: String,
+    pub job_id: String,
     conn: Arc<Mutex<PgConnection>>,
-    active_jobs: Arc<Mutex<Vec<EtlJobStatus>>>,
+    pub active_jobs: Arc<Mutex<Vec<EtlJobStatus>>>,
 }
 
 impl EtlJobManager {

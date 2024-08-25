@@ -1,6 +1,7 @@
 pub mod messages;
 
 use async_trait::async_trait;
+use database::EtlJobManager;
 use database::Table;
 use kanal::AsyncSender;
 use messages::ChangeSet;
@@ -9,15 +10,15 @@ use std::collections::HashMap;
 
 #[async_trait]
 pub trait ETLTrait: Send + Sync {
-    async fn new(source: &str, sink: &str) -> eyre::Result<Self>
+    async fn new(source: &str, sink: &str, job_manager: &str) -> eyre::Result<Self>
     where
         Self: Sized;
 
     /// Return the ID of the ETL job, ID must be unique
     fn id(&self) -> String;
 
-    /// Return the active request being processed
-    fn active_request(&self) -> Option<Message>;
+    /// Return EtlJobManager
+    fn job_manager(&self) -> &EtlJobManager;
 
     /// Return the tier of the ETL, Tier must be static
     fn tier(&self) -> i64;
