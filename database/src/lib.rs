@@ -1,9 +1,9 @@
+mod __etl_job_status;
 mod assets;
-mod etl_job_status;
 mod query_interfaces;
 
+pub use __etl_job_status::EtlJobManager;
 pub use assets::Asset;
-pub use etl_job_status::EtlJobManager;
 pub use query_interfaces::*;
 
 use serde::Deserialize;
