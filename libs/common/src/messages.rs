@@ -150,7 +150,7 @@ mod tests {
             filters: serde_json::json!({"user": "abcde" }),
         });
 
-        tables.insert(Table::Tier1(Tier1::Transactions), changes);
+        tables.insert(Table::Tier1(Tier1::Actions), changes);
 
         let msg = Message::DataStoreUpdated { tier: 1, tables };
         log::info!("Message: {:?}", msg);
@@ -200,7 +200,7 @@ mod tests {
         if let Message::DataStoreUpdated { tier, tables } = deserialized {
             assert_eq!(tier, 0);
             assert_eq!(tables.len(), 1);
-            let changes = tables.get(&Table::Tier1(Tier1::Transactions)).unwrap();
+            let changes = tables.get(&Table::Tier1(Tier1::Actions)).unwrap();
             assert_eq!(changes.ranges().len(), 1);
             assert_eq!(changes.ranges()[0].filters, serde_json::Value::Null);
         } else {

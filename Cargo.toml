@@ -3,7 +3,7 @@
 members = [
     "database",
     "etl-app",
-    "crates/example",
+    "crates/action_job",
     "crates/example2",
     "libs/common",
 ]
@@ -34,6 +34,6 @@ google-cloud-pubsub = "0.28.1"
 
 # Packages
 database = { path = "database" }
-example = { path = "crates/example" }
+action_job = { path = "crates/action_job" }
 example2 = { path = "crates/example2" }
 common = { path = "libs/common" }

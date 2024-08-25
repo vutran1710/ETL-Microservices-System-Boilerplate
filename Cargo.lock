@@ -3,6 +3,21 @@
 version = 3
 
 [[package]]
+name = "action_job"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "common",
+ "database",
+ "eyre",
+ "futures-util",
+ "kanal",
+ "log",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -492,6 +507,7 @@ name = "database"
 version = "0.1.0"
 dependencies = [
  "async-stream",
+ "bigdecimal",
  "chrono",
  "diesel",
  "env_logger",
@@ -638,13 +654,13 @@ dependencies = [
 name = "etl-app"
 version = "0.1.0"
 dependencies = [
+ "action_job",
  "amqprs",
  "async-trait",
  "clap",
  "common",
  "database",
  "env_logger",
- "example",
  "example2",
  "eyre",
  "google-cloud-pubsub",
@@ -662,21 +678,6 @@ name = "event-listener"
 version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
-
-[[package]]
-name = "example"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "common",
- "database",
- "eyre",
- "futures-util",
- "kanal",
- "log",
- "serde",
- "serde_json",
-]
 
 [[package]]
 name = "example2"

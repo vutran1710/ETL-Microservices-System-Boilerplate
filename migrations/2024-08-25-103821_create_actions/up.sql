@@ -1,4 +1,6 @@
-/*
+-- Your SQL goes here
+CREATE TYPE action_types AS ENUM ('SEND', 'RECEIVE');
+
 CREATE TABLE IF NOT EXISTS actions
 (
     id              varchar(255) PRIMARY KEY NOT NULL UNIQUE,
@@ -16,22 +18,9 @@ CREATE TABLE IF NOT EXISTS actions
     block_timestamp BIGINT                   NOT NULL,
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-*/
-diesel::table! {
-    actions (id) {
-        id -> VarChar,
-        action_type -> VarChar,
-        asset_id -> BigInt,
-        asset_value -> Numeric,
-        usd_value -> Numeric,
-        usd_price -> Numeric,
-        chain_id -> BigInt,
-        tx_hash -> VarChar,
-        log_index -> BigInt,
-        wallet_address -> VarChar,
-        data -> Nullable<Jsonb>,
-        block_number -> BigInt,
-        block_timestamp -> BigInt,
-        created_at -> Timestamp,
-    }
-}
+
+-- Indexes
+CREATE INDEX idx_actions_tx_hash ON actions (tx_hash);
+CREATE INDEX idx_actions_wallet_address ON actions (wallet_address);
+CREATE INDEX idx_actions_block_timestamp ON actions (block_timestamp);
+CREATE INDEX idx_actions_chain_id_block_number ON actions (chain_id, block_number asc);
