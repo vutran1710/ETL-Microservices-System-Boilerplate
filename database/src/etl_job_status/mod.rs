@@ -9,7 +9,7 @@ mod schemas;
 
 // Database tables are defined here ------------------------------------------------------
 #[derive(Queryable, Selectable, Insertable, Debug, Clone)]
-#[diesel(table_name = schemas::etl_job_status)]
+#[diesel(table_name = schemas::__etl_job_status)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct EtlJobStatus {
     pub id: i64,
@@ -43,10 +43,10 @@ impl EtlJobManager {
     }
 
     fn latest_active_jobs(&self) -> Vec<EtlJobStatus> {
-        use schemas::etl_job_status::dsl::*;
+        use schemas::__etl_job_status::dsl::*;
 
         let mut conn = self.conn.lock().unwrap();
-        let result = etl_job_status
+        let result = __etl_job_status
             .filter(job_id.eq(&self.job_id))
             .filter(finished_at.is_null())
             .order(received_at.desc())
@@ -66,7 +66,7 @@ impl EtlJobManager {
     }
 
     pub fn add_new_job(&self, new_request: Value) -> eyre::Result<EtlJobStatus> {
-        use schemas::etl_job_status::dsl::*;
+        use schemas::__etl_job_status::dsl::*;
 
         let mut conn = self.conn.lock().unwrap();
         let rows = vec![(
@@ -77,7 +77,7 @@ impl EtlJobManager {
             progress.eq(-1),
         )];
 
-        let inserted_job = diesel::insert_into(etl_job_status)
+        let inserted_job = diesel::insert_into(__etl_job_status)
             .values(&rows)
             .get_result::<EtlJobStatus>(conn.deref_mut())?;
 
@@ -89,13 +89,13 @@ impl EtlJobManager {
     }
 
     pub fn update_progress(&self, updated_progress: i64, job_index: usize) -> eyre::Result<()> {
-        use schemas::etl_job_status::dsl::*;
+        use schemas::__etl_job_status::dsl::*;
 
         let active_jobs = self.active_jobs.lock().unwrap();
 
         if let Some(job) = active_jobs.get(job_index) {
             let mut conn = self.conn.lock().unwrap();
-            diesel::update(etl_job_status.find(job.id))
+            diesel::update(__etl_job_status.find(job.id))
                 .set(progress.eq(updated_progress))
                 .execute(conn.deref_mut())?;
             log::info!("Updated progress for job {}", job.id);
@@ -106,13 +106,13 @@ impl EtlJobManager {
     }
 
     pub fn set_finished_at(&self, job_index: usize) -> eyre::Result<()> {
-        use schemas::etl_job_status::dsl::*;
+        use schemas::__etl_job_status::dsl::*;
 
         let mut active_jobs = self.active_jobs.lock().unwrap();
 
         if let Some(job) = active_jobs.get(job_index) {
             let mut conn = self.conn.lock().unwrap();
-            diesel::update(etl_job_status.find(job.id))
+            diesel::update(__etl_job_status.find(job.id))
                 .set(finished_at.eq(Some(chrono::Utc::now().naive_utc())))
                 .execute(conn.deref_mut())?;
             log::info!("Job {} is finished", job.id);

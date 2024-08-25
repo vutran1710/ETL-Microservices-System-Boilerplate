@@ -1,5 +1,5 @@
 diesel::table! {
-    etl_job_status (id) {
+    __etl_job_status (id) {
         id -> BigSerial,
         job_id -> VarChar,
         job_tier -> Integer,

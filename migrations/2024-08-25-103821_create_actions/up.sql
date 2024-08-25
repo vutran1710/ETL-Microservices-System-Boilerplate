@@ -1,5 +1,13 @@
 -- Your SQL goes here
-CREATE TYPE action_types AS ENUM ('SEND', 'RECEIVE');
+
+--create types
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'action_types') THEN
+        CREATE TYPE action_types AS ENUM ('SEND', 'RECEIVE');
+    END IF;
+    --more types here...
+END$$;
 
 CREATE TABLE IF NOT EXISTS actions
 (

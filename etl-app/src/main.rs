@@ -20,21 +20,21 @@ struct Args {
     #[arg(
         long,
         env = "ETL_SOURCE",
-        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+        default_value = "postgres://postgres:postgres@localhost:5432/mc2"
     )]
     source: String,
 
     #[arg(
         long,
         env = "ETL_SINK",
-        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+        default_value = "postgres://postgres:postgres@localhost:5432/mc2"
     )]
     sink: String,
 
     #[arg(
         long,
         env = "ETL_JOB_MANAGER",
-        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+        default_value = "postgres://postgres:postgres@localhost:5432/mc2"
     )]
     job_manager: String,
 
