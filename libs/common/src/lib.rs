@@ -15,7 +15,7 @@ pub trait ETLTrait: Send + Sync {
         Self: Sized;
 
     /// Return the ID of the ETL job, ID must be unique
-    fn id(&self) -> String;
+    fn id() -> String;
 
     /// Return EtlJobManager
     fn job_manager(&self) -> &EtlJobManager;

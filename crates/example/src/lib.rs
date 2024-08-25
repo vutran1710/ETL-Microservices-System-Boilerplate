@@ -73,7 +73,7 @@ impl ETLTrait for Etl {
         })
     }
 
-    fn id(&self) -> String {
+    fn id() -> String {
         JOB_ID.to_string()
     }
 
