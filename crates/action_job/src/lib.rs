@@ -14,7 +14,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 #[derive(Debug, Default)]
-struct State {
+struct ExampleState {
     array: Vec<i32>,
 }
 
@@ -23,7 +23,7 @@ fn handle_data(
     changes: &ChangeSet,
     source: &mut PgConnection,
     sink: &mut PgConnection,
-    state: &mut State,
+    state: &mut ExampleState,
     sink_changes: &mut HashMap<Table, ChangeSet>,
 ) -> eyre::Result<()> {
     log::info!("Processing changes for table: {:?}", table);
@@ -44,6 +44,6 @@ fn handle_data(
 create_etl_job!(
     id => "job_id_abc",
     tier => 1,
-    state => State,
+    state => ExampleState,
     handle_data
 );

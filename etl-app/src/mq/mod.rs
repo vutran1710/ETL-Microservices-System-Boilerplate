@@ -66,7 +66,7 @@ pub trait MessageQueueTrait {
 }
 
 impl MessageQueue {
-    pub async fn new() -> eyre::Result<Self> {
+    pub async fn new(job_id: &str) -> eyre::Result<Self> {
         #[cfg(feature = "pubsub")]
         {
             let QueueArgs { pubsub } = QueueArgs::parse();
@@ -80,7 +80,7 @@ impl MessageQueue {
         {
             log::info!("Using RabbitMQ");
             let QueueArgs { rabbitmq: args } = QueueArgs::parse();
-            let client = RabbitMQ::new(&args).await?;
+            let client = RabbitMQ::new(&args, job_id).await?;
             return Ok(MessageQueue::RabbitMQ(client));
         }
     }

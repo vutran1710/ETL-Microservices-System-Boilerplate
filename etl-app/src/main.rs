@@ -43,14 +43,10 @@ struct Args {
 }
 
 async fn main_task(
-    source: &str,
-    sink: &str,
-    job_manager: &str,
+    etl: Etl,
     receiver: AsyncReceiver<Message>,
     emitter: AsyncSender<Message>,
 ) -> eyre::Result<()> {
-    let etl = Etl::new(source, sink, job_manager)?;
-
     while let Ok(msg) = receiver.recv().await {
         etl.process_message(msg, emitter.clone()).await?;
     }
@@ -69,7 +65,9 @@ async fn main() -> eyre::Result<()> {
         job_manager,
     } = Args::parse();
     log::info!("Binding port: {}", port);
-    let msg_queue = MessageQueue::new().await?;
+
+    let etl = Etl::new(&source, &sink, &job_manager)?;
+    let msg_queue = MessageQueue::new(&Etl::id()).await?;
     let server = Server::new(port);
 
     let (input_sender, input_receiver) = kanal::unbounded_async();
@@ -77,7 +75,7 @@ async fn main() -> eyre::Result<()> {
 
     tokio::try_join!(
         msg_queue.run(input_sender.clone(), output_receiver),
-        main_task(&source, &sink, &job_manager, input_receiver, output_sender),
+        main_task(etl, input_receiver, output_sender),
         server.run(input_sender.clone())
     )?;
 
