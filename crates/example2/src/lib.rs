@@ -1,13 +1,14 @@
 use async_trait::async_trait;
 use chrono::NaiveDate;
 use common::create_etl_job;
-use common::messages::ChangeSet;
 use common::ETLTrait;
 use database::create_pg_connection;
 use database::tier_2;
+use database::tier_3;
 use database::tier_3::BalancePerDate;
 use database::EtlJobManager;
 use database::PgConnection;
+use database::RangeQuery;
 use database::RowStream;
 use database::Table;
 use std::collections::HashMap;
@@ -56,19 +57,19 @@ fn process_buy_sell(buy_sell: tier_2::BuySell, state: &mut BalanceState) -> eyre
 }
 
 fn handle_data(
-    table: &Table,
-    changes: &ChangeSet,
+    table: Table,
+    range: RangeQuery,
     source: &mut PgConnection,
     sink: &mut PgConnection,
     state: &mut BalanceState,
-    sink_changes: &mut HashMap<Table, ChangeSet>,
-) -> eyre::Result<()> {
+) -> eyre::Result<(Table, RangeQuery)> {
     log::info!("Processing changes for table: {:?}", table);
+    let mut range = range.clone_as_start();
+
     match table {
         Table::Tier2(tier_2::Table::BuySell) => {
             log::info!("Processing buy-sell");
-            let changes = changes.lowest_ranges();
-            let stream = tier_2::BuySell::query(source, &changes.ranges())?;
+            let stream = tier_2::BuySell::query_range(source, &range)?;
 
             for row in stream {
                 log::info!("Processing row: {:?}", row);
@@ -80,12 +81,11 @@ fn handle_data(
 
         _ => eyre::bail!("Unsupported table: {}", table),
     }
-    Ok(())
+    Ok((Table::Tier3(tier_3::Table::BalancePerDate), range))
 }
 
 create_etl_job!(
     id => "job_id_2",
-    tier => 2,
     state => BalanceState,
     handle_data
 );

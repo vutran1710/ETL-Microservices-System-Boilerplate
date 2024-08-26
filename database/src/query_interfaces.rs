@@ -90,20 +90,32 @@ impl Range {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct QueryWithRange {
+pub struct RangeQuery {
     pub range: Range,
     pub filters: serde_json::Value,
 }
 
+impl RangeQuery {
+    pub fn clone_as_start(&self) -> Self {
+        let mut current_range = self.range.clone();
+        match &mut current_range {
+            Range::Numeric { to, from } => *to = *from,
+            Range::DateTime { to, from } => *to = *from,
+            Range::Date { to, from } => *to = *from,
+        }
+        Self {
+            range: current_range,
+            filters: self.filters.clone(),
+        }
+    }
+}
+
 pub trait RowStream {
-    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>>
+    fn query_range(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>>
     where
         Self: Sized;
 
-    fn query(
-        pool: &mut PgConnection,
-        queries: &[QueryWithRange],
-    ) -> eyre::Result<kanal::Receiver<Self>>
+    fn query(pool: &mut PgConnection, queries: &[RangeQuery]) -> eyre::Result<kanal::Receiver<Self>>
     where
         Self: Sized + Send + Clone + Sync + 'static,
     {

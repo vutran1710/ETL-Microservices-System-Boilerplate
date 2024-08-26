@@ -14,7 +14,6 @@ mod schemas;
 pub struct EtlJobStatus {
     pub id: i64,
     pub job_id: String,
-    pub job_tier: i32,
     pub active_request: Value,
     pub received_at: NaiveDateTime,
     pub finished_at: Option<NaiveDateTime>,
@@ -24,20 +23,18 @@ pub struct EtlJobStatus {
 #[derive(Clone)]
 pub struct EtlJobManager {
     pub job_id: String,
-    pub job_tier: i32,
-    conn: Arc<Mutex<PgConnection>>,
     pub active_jobs: Arc<Mutex<Vec<EtlJobStatus>>>,
+    conn: Arc<Mutex<PgConnection>>,
 }
 
 impl EtlJobManager {
-    fn new(url: &str, id: &str, tier: i32) -> Self {
+    fn new(url: &str, id: &str) -> Self {
         let conn =
             PgConnection::establish(url).unwrap_or_else(|_| panic!("Error connecting to {}", url));
 
         Self {
             conn: Arc::new(Mutex::new(conn)),
             job_id: id.to_string(),
-            job_tier: tier,
             active_jobs: Arc::new(Mutex::new(Vec::new())),
         }
     }
@@ -56,8 +53,8 @@ impl EtlJobManager {
         result
     }
 
-    pub fn initialize(db: &str, job_id: &str, tier: i32) -> Self {
-        let manager = EtlJobManager::new(db, job_id, tier);
+    pub fn initialize(db: &str, job_id: &str) -> Self {
+        let manager = EtlJobManager::new(db, job_id);
         let active_jobs_from_db = manager.latest_active_jobs();
         let mut active_jobs = manager.active_jobs.lock().unwrap();
         active_jobs.extend(active_jobs_from_db);
@@ -71,7 +68,6 @@ impl EtlJobManager {
         let mut conn = self.conn.lock().unwrap();
         let rows = vec![(
             job_id.eq(&self.job_id),
-            job_tier.eq(self.job_tier),
             active_request.eq(new_request),
             received_at.eq(chrono::Utc::now().naive_utc()),
             progress.eq(-1),

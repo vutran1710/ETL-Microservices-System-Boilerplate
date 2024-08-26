@@ -2,8 +2,8 @@ use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 mod schemas;
-use crate::QueryWithRange;
 use crate::Range;
+use crate::RangeQuery;
 use crate::RowStream;
 use serde::Deserialize;
 use serde::Serialize;
@@ -45,7 +45,7 @@ pub struct ChainIdFilter {
 
 // Implement RowStream for Transaction -------------------------------------------------------
 impl RowStream for Action {
-    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>> {
+    fn query_range(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>> {
         if let Range::Numeric {
             from: from_block_number,
             to: to_block_number,
