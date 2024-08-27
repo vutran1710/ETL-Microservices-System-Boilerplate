@@ -30,15 +30,5 @@ example2 = { workspace = true, optional = true }
 
 
 [features]
-# Etl libs
-etl_action_job = ["action_job", "rabbitmq"]
-etl_example2 = ["example2", "rabbitmq"]
-
-# MQ selection
-pubsub = ["google-cloud-pubsub"]
-rabbitmq = ["amqprs"]
-
-
-# Build selection
-all = ["etl_action_job", "etl_example2"]
-default = ["etl_action_job"]
+default_queue = ["amqprs"]
+default = ["action_job", "default_queue"]

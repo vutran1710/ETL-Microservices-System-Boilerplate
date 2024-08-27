@@ -4,22 +4,14 @@
 ...
 
 ## Development
-- Create a new etl crate in `crates/` using `cargo new --lib crates/etl-lib-name`
-- Add the etl crate to the workspace in `Cargo.toml` in `members` array and in `dependencies` section
-- Add the etl crate to the **etl-app** in Cargo with proper feature name
-- Import command from the etl crate in the **etl-app** and use it in the main function
+- Create new ETL app with Make:
+```bash
+$ make create-etl name={app-name} tables={table1,table2}
+```
 
 
 ## Build
 - Build the **etl-app** using `cargo build --release -F  {feature-name}`
-- Replace `{feature-name}` with the feature name of the etl crate you want to build in `main.rs`
-
-## Test with Example
-
-The following example runs crates/example requires:
-- RabbitMQ server running on `localhost:5672`
-- PostgreSQL server running on `localhost:5432`, with 2 tables: `transactions`(for **Tier1**) and `buy_sell`(for **Tier2**)
-- Prepare required environment variables, including
 
 #### app env
 ```rust
@@ -51,7 +43,7 @@ pub struct Args {
 
 ## Command to run
 ```rust
-$ cargo run -p etl-app -F example_with_rabbitmq
+$ cargo run -p etl-app -F {app-name}
 ```
 
 - When run, application has a api server that user can send manual processing request at `http://{host}:{port}/process`. This api accepts POST only.
@@ -59,21 +51,19 @@ $ cargo run -p etl-app -F example_with_rabbitmq
 - Example query for POST payload:
 ```json
 {
-    "DataStoreUpdated": {
-        "tier": 1,
-        "tables": {
-            "transactions": [
-                {
-                    "range": {
-                      "from": 1,
-                      "to": 10
-                    },
-                    "filters": {
-                      "user": "abcde"
-                    }
-                }
-            ]
+  "DataStoreUpdated": {
+    "table": "actions",
+    "range": {
+        "range": {
+          "numeric": {
+              "from": 1,
+              "to": 10
+          }
+        },
+        "filters": {
+          "user": "abcde"
         }
     }
+  }
 }
 ```

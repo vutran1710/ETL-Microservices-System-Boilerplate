@@ -33,8 +33,10 @@ env_logger = "*"
 # Message Queue
 google-cloud-pubsub = "0.28.1"
 
-# Packages
+# Shared Packages
 database = { path = "database" }
+common = { path = "libs/common" }
+
+# ETL Packages
 action_job = { path = "crates/action_job" }
 example2 = { path = "crates/example2" }
-common = { path = "libs/common" }

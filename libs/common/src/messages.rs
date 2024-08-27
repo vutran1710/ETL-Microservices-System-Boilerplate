@@ -46,21 +46,17 @@ mod tests {
         let actual_value = serde_json::to_value(&msg).unwrap();
         let expected_value = json!({
             "DataStoreUpdated": {
-                "tier": 1,
-                "tables": {
-                    "transactions": [
-                        {
-                            "range": {
-                                "numeric": {
-                                    "from": 1,
-                                    "to": 10
-                                }
-                            },
-                            "filters": {
-                            "user": "abcde"
-                            }
+                "table": "actions",
+                "range": {
+                    "range": {
+                        "numeric": {
+                            "from": 1,
+                            "to": 10
                         }
-                    ]
+                    },
+                    "filters": {
+                    "user": "abcde"
+                    }
                 }
             }
         });
@@ -69,23 +65,20 @@ mod tests {
 
         let example_payload = r#"{
             "DataStoreUpdated": {
-                "tier": 0,
-                "tables": {
-                    "transactions": [
-                        {
-                            "range": {
-                                "numeric": {
-                                    "from": 1,
-                                    "to": 10
-                                }
-                            },
-                            "filters": null
+                "table": "actions",
+                "range": {
+                    "range": {
+                        "numeric": {
+                            "from": 1,
+                            "to": 10
                         }
-                    ]
+                    },
+                    "filters": null
                 }
             }
         }"#;
         let deserialized: Message = serde_json::from_str(example_payload).unwrap();
+        #[allow(irrefutable_let_patterns)]
         if let Message::DataStoreUpdated { table, range } = deserialized {
             assert_eq!(table, Table::Tier1(Tier1::Actions));
             assert_eq!(range.filters, serde_json::Value::Null);

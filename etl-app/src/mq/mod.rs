@@ -1,15 +1,15 @@
 use common::messages::Message;
 
-#[cfg(feature = "pubsub")]
+#[cfg(feature = "google-cloud-pubsub")]
 use google_cloud_pubsub::client::Client as PubSubClient;
-#[cfg(feature = "pubsub")]
+#[cfg(feature = "google-cloud-pubsub")]
 use google_cloud_pubsub::client::ClientConfig as PubSubClientConfig;
 
-#[cfg(feature = "rabbitmq")]
+#[cfg(feature = "amqprs")]
 mod rabbitmq;
-#[cfg(feature = "rabbitmq")]
+#[cfg(feature = "amqprs")]
 use rabbitmq::Args as RabbitMQArgs;
-#[cfg(feature = "rabbitmq")]
+#[cfg(feature = "amqprs")]
 use rabbitmq::RabbitMQ;
 
 use async_trait::async_trait;
@@ -40,11 +40,10 @@ pub struct PubSubArgs {
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct QueueArgs {
-    /// Database connect options
-    #[cfg(feature = "pubsub")]
+    #[cfg(feature = "google-cloud-pubsub")]
     #[command(flatten, next_help_heading = "PubSub client")]
     pub pubsub: PubSubArgs,
-    #[cfg(feature = "rabbitmq")]
+    #[cfg(feature = "amqprs")]
     #[command(flatten, next_help_heading = "RabbitMQ client")]
     pub rabbitmq: RabbitMQArgs,
 }
@@ -53,9 +52,9 @@ pub struct QueueArgs {
 MessageQueue should enable Auto-Ack
 */
 pub enum MessageQueue {
-    #[cfg(feature = "pubsub")]
+    #[cfg(feature = "google-cloud-pubsub")]
     PubSub(PubSubClient),
-    #[cfg(feature = "rabbitmq")]
+    #[cfg(feature = "amqprs")]
     RabbitMQ(RabbitMQ),
 }
 
@@ -70,7 +69,7 @@ pub trait MessageQueueTrait {
 
 impl MessageQueue {
     pub async fn new(job_id: &str) -> eyre::Result<Self> {
-        #[cfg(feature = "pubsub")]
+        #[cfg(feature = "google-cloud-pubsub")]
         {
             let QueueArgs { pubsub } = QueueArgs::parse();
             let pubsub = pubsub.unwrap();
@@ -79,7 +78,7 @@ impl MessageQueue {
             return Ok(MessageQueue::PubSub(client));
         }
 
-        #[cfg(feature = "rabbitmq")]
+        #[cfg(feature = "amqprs")]
         {
             log::info!("Using RabbitMQ");
             let QueueArgs { rabbitmq: args } = QueueArgs::parse();
@@ -97,12 +96,12 @@ impl MessageQueueTrait for MessageQueue {
         sink_receiver: AsyncReceiver<Message>,
     ) -> eyre::Result<()> {
         match self {
-            #[cfg(feature = "pubsub")]
+            #[cfg(feature = "google-cloud-pubsub")]
             MessageQueue::PubSub(client) => {
                 log::info!("Running Google Cloud PubSub");
                 unimplemented!()
             }
-            #[cfg(feature = "rabbitmq")]
+            #[cfg(feature = "amqprs")]
             MessageQueue::RabbitMQ(client) => client.run(source_sender, sink_receiver).await,
         }
     }
