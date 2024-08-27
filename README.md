@@ -16,11 +16,28 @@ $ make create-etl name={app-name} tables={table1,table2}
 #### app env
 ```rust
 struct Args {
-    #[arg(long, env = "ETL_SOURCE")] // Postgres database url of source table (eg: transactions)
+    #[arg(
+        long,
+        env = "ETL_SOURCE",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
     source: String,
-    #[arg(long, env = "ETL_SINK")] // Postgres database url of sink table (eg: buy_sell)
+
+    #[arg(
+        long,
+        env = "ETL_SINK",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
     sink: String,
-    #[arg(long, env = "ETL_SERVER_PORT")]
+
+    #[arg(
+        long,
+        env = "ETL_JOB_MANAGER",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
+    job_manager: String,
+
+    #[arg(long, env = "ETL_SERVER_PORT", default_value = "8080")]
     port: u16,
 }
 ```
