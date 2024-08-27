@@ -1,7 +1,7 @@
 mod schemas;
 
-use crate::QueryWithRange;
 use crate::Range;
+use crate::RangeQuery;
 use crate::RowStream;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
@@ -24,7 +24,7 @@ pub enum Action {
 }
 
 // Database tables are defined here ------------------------------------------------------
-#[derive(Queryable, Selectable, Insertable, Debug)]
+#[derive(Queryable, Selectable, Insertable, Debug, Clone)]
 #[diesel(table_name = schemas::buy_sell)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct BuySell {
@@ -62,9 +62,9 @@ pub struct Filter {
     pub user: String,
 }
 
-impl From<&BuySell> for QueryWithRange {
+impl From<&BuySell> for RangeQuery {
     fn from(value: &BuySell) -> Self {
-        QueryWithRange {
+        RangeQuery {
             range: Range::Numeric {
                 from: value.timestamp.and_utc().timestamp(),
                 to: value.timestamp.and_utc().timestamp(),
@@ -76,7 +76,7 @@ impl From<&BuySell> for QueryWithRange {
 
 // Implement RowStream for BuySell -------------------------------------------------------
 impl RowStream for BuySell {
-    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>> {
+    fn query(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>> {
         use schemas::buy_sell::dsl::*;
         let user_filter: Filter = serde_json::from_value(query.filters.clone())?;
 

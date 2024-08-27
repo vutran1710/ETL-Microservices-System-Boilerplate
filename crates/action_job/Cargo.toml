@@ -1,5 +1,5 @@
 [package]
-name = "example"
+name = "action_job"
 version = "0.1.0"
 edition = "2021"
 

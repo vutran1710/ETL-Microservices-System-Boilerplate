@@ -3,7 +3,7 @@
 members = [
     "database",
     "etl-app",
-    "crates/example",
+    "crates/action_job",
     "crates/example2",
     "libs/common",
 ]
@@ -24,6 +24,7 @@ amqprs = "1.7.0"
 async-stream = "0.3.5"
 futures-core = "0.3.30"
 futures-util = "0.3.30"
+futures = "0.3.30"
 warp = "0.3.7"
 async-trait = "0.1.81"
 log = "*"
@@ -32,8 +33,10 @@ env_logger = "*"
 # Message Queue
 google-cloud-pubsub = "0.28.1"
 
-# Packages
+# Shared Packages
 database = { path = "database" }
-example = { path = "crates/example" }
-example2 = { path = "crates/example2" }
 common = { path = "libs/common" }
+
+# ETL Packages
+action_job = { path = "crates/action_job" }
+example2 = { path = "crates/example2" }

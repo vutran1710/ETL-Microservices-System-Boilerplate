@@ -1,14 +1,9 @@
-use async_stream::stream;
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use diesel::PgConnection;
-use futures_core::stream::Stream;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Debug;
-use std::ops::DerefMut;
-use std::sync::Arc;
-use std::sync::Mutex;
 
 /// Range is [from, to]: both are inclusive
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -28,8 +23,14 @@ pub enum Range {
     },
 }
 
+impl Default for Range {
+    fn default() -> Self {
+        Range::Numeric { from: 0, to: 0 }
+    }
+}
+
 impl Range {
-    fn validate(&self) -> bool {
+    pub fn validate(&self) -> bool {
         match self {
             Range::Numeric { from, to } => from <= to,
             Range::DateTime { from, to } => from <= to,
@@ -92,40 +93,31 @@ impl Range {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct QueryWithRange {
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
+pub struct RangeQuery {
     pub range: Range,
     pub filters: serde_json::Value,
 }
 
-pub trait RowStream {
-    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>>
-    where
-        Self: Sized;
-    fn query(pool: Arc<Mutex<PgConnection>>, queries: &[QueryWithRange]) -> impl Stream<Item = Self>
-    where
-        Self: Sized,
-    {
-        stream! {
-            for query in queries {
-                if !query.range.validate() {
-                    log::error!("Invalid range: range={:?}", query.range);
-                    continue;
-                }
-
-                let rows = Self::query_range(pool.lock().unwrap().deref_mut(), query)
-                    .map_err(|e| {
-                        log::error!("Error querying range: range={:?} {:?}", query, e);
-                        e
-                    })
-                    .unwrap();
-                log::info!("Get {} rows for query={:?}", rows.len(), query);
-                for row in rows {
-                    yield row;
-                }
-            }
+impl RangeQuery {
+    pub fn clone_as_start(&self) -> Self {
+        let mut current_range = self.range.clone();
+        match &mut current_range {
+            Range::Numeric { to, from } => *to = *from,
+            Range::DateTime { to, from } => *to = *from,
+            Range::Date { to, from } => *to = *from,
+        }
+        Self {
+            range: current_range,
+            filters: self.filters.clone(),
         }
     }
+}
+
+pub trait RowStream {
+    fn query(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>>
+    where
+        Self: Sized;
 }
 
 #[cfg(test)]

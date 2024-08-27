@@ -1,7 +1,7 @@
 mod schemas;
 
-use crate::QueryWithRange;
 use crate::Range;
+use crate::RangeQuery;
 use crate::RowStream;
 use chrono::NaiveDate;
 use diesel::prelude::*;
@@ -50,7 +50,7 @@ pub struct Filter {
 
 // Implement RowStream for BalancePerDate -------------------------------------------------------
 impl RowStream for BalancePerDate {
-    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>> {
+    fn query(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>> {
         let user_filter: Filter = serde_json::from_value(query.filters.clone())?;
         if let Range::Date {
             from: from_date,

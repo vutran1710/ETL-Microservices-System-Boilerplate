@@ -1,8 +1,11 @@
-mod etl_job_status;
+mod __etl_job_status;
+mod assets;
 mod query_interfaces;
 
-pub use etl_job_status::EtlJobManager;
+pub use __etl_job_status::EtlJobStatus;
+pub use assets::Asset;
 pub use query_interfaces::*;
+
 use serde::Deserialize;
 use serde::Serialize;
 use strum::Display;
@@ -45,9 +48,9 @@ mod tests {
     #[cfg(feature = "tier_1")]
     fn test_view_table_enum() {
         env_logger::try_init().ok();
-        let ex_table = super::Table::Tier1(crate::tier_1::Table::Transactions);
+        let ex_table = super::Table::Tier1(crate::tier_1::Table::Actions);
         let table_str = serde_json::to_string(&ex_table).unwrap();
         log::info!("table_str: {}", table_str);
-        assert_eq!(table_str, "\"transactions\"");
+        assert_eq!(table_str, "\"actions\"");
     }
 }

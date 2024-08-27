@@ -34,3 +34,17 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+
+
+CREATE TABLE IF NOT EXISTS __etl_job_status
+(
+    id             BIGSERIAL PRIMARY KEY,
+    job_id         VARCHAR(255) NOT NULL,
+    active_request JSONB        NOT NULL,
+    received_at    TIMESTAMP    NOT NULL,
+    finished_at    TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_etl_job_status_job_id ON __etl_job_status (job_id);

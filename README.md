@@ -1,34 +1,73 @@
 # ETL-Microservice-System
 
-## Introduction
-...
-
 ## Development
-- Create a new etl crate in `crates/` using `cargo new --lib crates/etl-lib-name`
-- Add the etl crate to the workspace in `Cargo.toml` in `members` array and in `dependencies` section
-- Add the etl crate to the **etl-app** in Cargo with proper feature name
-- Import command from the etl crate in the **etl-app** and use it in the main function
+- Create new ETL app with Make:
+```bash
+$ make create-etl name={app-name} tables={table1,table2}
+```
+
+- After creating the app, you can find the app in `crates/{app-name}/lib.rs` directory that looks like this:
+```rust
+struct SomeState {
+    state: std::collections::HashMap<String, Vec<i64>>,
+}
+
+fn handle_data(
+    table: Table,
+    range: RangeQuery,
+    source: &mut PgConnection,
+    sink: &mut PgConnection,
+    state: &mut SomeState,
+) -> eyre::Result<Option<(Table, RangeQuery)>> {
+    log::info!("Processing changes for table: {:?}", table);
+
+    todo!("Implement here")
+}
+
+create_etl_job!(
+    id => "{app-name}",
+    state => SomeState,
+    handle_data
+);
+```
+
+Implement the `handle_data` function to process the data.
+
+- The `table` is the table name that you receive from the Message Queue.
+- The `range` is the range query that you receive from the Message Queue. It tells the changes happened for the table in the given range.
+- For sink tables, you will need to import the tables you specified in the `tables` argument in the `create-etl` command. All the tables should be found in `database` crates and automatically exported for usage in your app.
+- Sink the data to the sink database using the `sink` connection. The `source` connection is used to query the data from the source database.
+- The `state` is used to store the state of the processing. For example, if you want to store the last processed id of a table, you can store it in the `state` struct.
 
 
 ## Build
 - Build the **etl-app** using `cargo build --release -F  {feature-name}`
-- Replace `{feature-name}` with the feature name of the etl crate you want to build in `main.rs`
-
-## Test with Example
-
-The following example runs crates/example requires:
-- RabbitMQ server running on `localhost:5672`
-- PostgreSQL server running on `localhost:5432`, with 2 tables: `transactions`(for **Tier1**) and `buy_sell`(for **Tier2**)
-- Prepare required environment variables, including
 
 #### app env
 ```rust
 struct Args {
-    #[arg(long, env = "ETL_SOURCE")] // Postgres database url of source table (eg: transactions)
+    #[arg(
+        long,
+        env = "ETL_SOURCE",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
     source: String,
-    #[arg(long, env = "ETL_SINK")] // Postgres database url of sink table (eg: buy_sell)
+
+    #[arg(
+        long,
+        env = "ETL_SINK",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
     sink: String,
-    #[arg(long, env = "ETL_SERVER_PORT")]
+
+    #[arg(
+        long,
+        env = "ETL_JOB_MANAGER",
+        default_value = "postgres://postgres:postgres@localhost:5432/postgres"
+    )]
+    job_manager: String,
+
+    #[arg(long, env = "ETL_SERVER_PORT", default_value = "8080")]
     port: u16,
 }
 ```
@@ -51,7 +90,7 @@ pub struct Args {
 
 ## Command to run
 ```rust
-$ cargo run -p etl-app -F example_with_rabbitmq
+$ cargo run -p etl-app -F {app-name}
 ```
 
 - When run, application has a api server that user can send manual processing request at `http://{host}:{port}/process`. This api accepts POST only.
@@ -59,21 +98,19 @@ $ cargo run -p etl-app -F example_with_rabbitmq
 - Example query for POST payload:
 ```json
 {
-    "DataStoreUpdated": {
-        "tier": 1,
-        "tables": {
-            "transactions": [
-                {
-                    "range": {
-                      "from": 1,
-                      "to": 10
-                    },
-                    "filters": {
-                      "user": "abcde"
-                    }
-                }
-            ]
+  "DataStoreUpdated": {
+    "table": "actions",
+    "range": {
+        "range": {
+          "numeric": {
+              "from": 1,
+              "to": 10
+          }
+        },
+        "filters": {
+          "user": "abcde"
         }
     }
+  }
 }
 ```

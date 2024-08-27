@@ -1,25 +1,33 @@
-use chrono::DateTime;
+use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 mod schemas;
-use crate::QueryWithRange;
 use crate::Range;
+use crate::RangeQuery;
 use crate::RowStream;
 use serde::Deserialize;
 use serde::Serialize;
 use strum::EnumString;
 
 // Database tables are defined here ------------------------------------------------------
-#[derive(Queryable, Selectable, Insertable, Debug)]
-#[diesel(table_name = schemas::transactions)]
+#[derive(Queryable, Selectable, Insertable, Debug, Clone)]
+#[diesel(table_name = schemas::actions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Transaction {
+pub struct Action {
+    pub id: String,
+    pub action_type: String,
+    pub asset_id: i64,
+    pub asset_value: BigDecimal,
+    pub usd_value: BigDecimal,
+    pub usd_price: BigDecimal,
+    pub chain_id: i64,
+    pub tx_hash: String,
+    pub log_index: i64,
+    pub wallet_address: String,
+    pub data: Option<serde_json::Value>,
     pub block_number: i64,
-    pub tx_index: i16,
-    pub from: String,
-    pub to: String,
-    pub value: i64,
-    pub timestamp: NaiveDateTime,
+    pub block_timestamp: i64,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(EnumString, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Hash)]
@@ -27,27 +35,30 @@ pub struct Transaction {
 pub enum Table {
     #[strum(ascii_case_insensitive)]
     #[default]
-    Transactions,
+    Actions,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct ChainIdFilter {
+    pub chain_id: i64,
 }
 
 // Implement RowStream for Transaction -------------------------------------------------------
-impl RowStream for Transaction {
-    fn query_range(pool: &mut PgConnection, query: &QueryWithRange) -> eyre::Result<Vec<Self>> {
+impl RowStream for Action {
+    fn query(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>> {
         if let Range::Numeric {
-            from: from_timestamp,
-            to: to_timestamp,
+            from: from_block_number,
+            to: to_block_number,
         } = query.range
         {
-            use schemas::transactions::dsl::*;
-            let from_timestamp = DateTime::from_timestamp(from_timestamp, 0)
-                .expect("bad timestamp")
-                .naive_utc();
-            let to_timestamp = DateTime::from_timestamp(to_timestamp, 0)
-                .expect("bad timestamp")
-                .naive_utc();
-            let rows = transactions
-                .filter(timestamp.ge(from_timestamp))
-                .filter(timestamp.le(to_timestamp))
+            use schemas::actions::dsl::*;
+            let chain_id_filter: ChainIdFilter =
+                serde_json::from_value(query.filters.clone()).expect("no chain_id filter found");
+
+            let rows = actions
+                .filter(block_number.ge(from_block_number))
+                .filter(block_number.le(to_block_number))
+                .filter(chain_id.eq(chain_id_filter.chain_id))
                 .load(pool)?;
 
             Ok(rows)
@@ -63,31 +74,38 @@ mod tests {
     use chrono::Utc;
     use rand::Rng;
 
-    fn create_mock_transactions(conn: &mut PgConnection, count: usize) {
-        use super::schemas::transactions::dsl::*;
+    fn create_mock_actions(conn: &mut PgConnection, count: usize) {
+        use super::schemas::actions::dsl::*;
 
         let mut rng = rand::thread_rng();
-        let mut mock_transactions = Vec::with_capacity(count);
-        let users = vec!["Alice", "Bob", "David"];
+        let mut mock_actions = Vec::with_capacity(count);
 
         for i in 0..count {
             let mock_block_number: i64 = (i as i64) + 5;
             let mock_tx_index = rng.gen_range(1..10);
 
-            let transaction = Transaction {
+            let action = Action {
+                id: format!("tx-{}", i),
+                action_type: "buy".to_string(),
+                asset_id: 1,
+                asset_value: BigDecimal::from(100),
+                usd_value: BigDecimal::from(100),
+                usd_price: BigDecimal::from(1),
+                chain_id: 1,
+                tx_hash: format!("tx-hash-{}", i),
+                log_index: mock_tx_index,
+                wallet_address: "0x1234567890".to_string(),
+                data: None,
                 block_number: mock_block_number,
-                tx_index: mock_tx_index as i16,
-                from: users[i % users.len()].to_string(),
-                to: users[(i + 1) % users.len()].to_string(),
-                value: rng.gen_range(1..10),
-                timestamp: Utc::now().naive_utc() - chrono::Duration::days((50 - i) as i64),
+                block_timestamp: Utc::now().timestamp(),
+                created_at: Utc::now().naive_utc(),
             };
-            mock_transactions.push(transaction);
+            mock_actions.push(action);
         }
 
         log::info!("Execute.........");
-        let result: Vec<Transaction> = diesel::insert_into(transactions)
-            .values(&mock_transactions)
+        let result: Vec<Action> = diesel::insert_into(actions)
+            .values(&mock_actions)
             .get_results(conn)
             .unwrap();
         log::info!("Result: {:?}", result);
@@ -99,11 +117,10 @@ mod tests {
     fn test_create_txs() {
         env_logger::try_init().ok();
         log::info!("Connecting to database");
-        let mut conn =
-            PgConnection::establish("postgres://postgres:postgres@localhost:5432/postgres")
-                .expect("Error connecting to database");
+        let mut conn = PgConnection::establish("postgres://postgres:postgres@localhost:5432/mc2")
+            .expect("Error connecting to database");
 
-        log::info!("Creating mock transactions");
-        create_mock_transactions(&mut conn, 5);
+        log::info!("Creating mock actions...");
+        create_mock_actions(&mut conn, 5);
     }
 }

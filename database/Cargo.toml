@@ -10,6 +10,7 @@ diesel = { version = "2.2.0", features = [
     "numeric",
     "serde_json",
 ] }
+bigdecimal = "*"
 chrono = { workspace = true }
 async-stream = { workspace = true }
 futures-util = { workspace = true }

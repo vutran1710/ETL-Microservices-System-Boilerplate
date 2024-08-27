@@ -40,6 +40,7 @@ pub struct Args {
 pub struct RabbitMQ {
     connection: Connection,
     args: Args,
+    client_name: String,
 }
 
 struct RabbitMqConsumer {
@@ -71,7 +72,7 @@ impl AsyncConsumer for RabbitMqConsumer {
 }
 
 impl RabbitMQ {
-    pub async fn new(args: &Args) -> Result<Self> {
+    pub async fn new(args: &Args, client_name: &str) -> Result<Self> {
         log::info!(
             "Connecting to RabbitMQ: source={}, sink={}",
             args.source_queue,
@@ -87,6 +88,7 @@ impl RabbitMQ {
         Ok(Self {
             connection,
             args: args.to_owned(),
+            client_name: client_name.to_owned(),
         })
     }
 }
@@ -122,13 +124,15 @@ impl MessageQueueTrait for RabbitMQ {
                 .await
                 .unwrap();
 
+            let consumer_name = format!("{}-consumer", self.client_name);
+
             // FIXME: dynamic consumer name
             channel
                 .basic_consume(
                     RabbitMqConsumer {
                         sender: source_sender.clone(),
                     },
-                    BasicConsumeArguments::new(&self.args.source_queue, "example_consumer"),
+                    BasicConsumeArguments::new(&self.args.source_queue, &consumer_name),
                 )
                 .await
                 .expect("Failed to start consuming messages");
