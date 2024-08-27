@@ -49,6 +49,9 @@ pub struct QueueArgs {
     pub rabbitmq: RabbitMQArgs,
 }
 
+/*
+MessageQueue should enable Auto-Ack
+*/
 pub enum MessageQueue {
     #[cfg(feature = "pubsub")]
     PubSub(PubSubClient),
