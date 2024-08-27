@@ -4,7 +4,6 @@ diesel::table! {
         job_id -> VarChar,
         active_request -> Jsonb,
         received_at -> Timestamp,
-        finished_at -> Nullable<Timestamp>,
-        progress -> BigInt,
+        finished_at -> Nullable<Timestamp>
     }
 }

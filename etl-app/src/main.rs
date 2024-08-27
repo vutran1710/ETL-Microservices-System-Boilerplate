@@ -6,7 +6,6 @@ use common::messages::Message;
 use common::ETLTrait;
 
 use kanal::AsyncReceiver;
-use kanal::AsyncSender;
 use mq::MessageQueue;
 use mq::MessageQueueTrait;
 use server::Server;
@@ -42,13 +41,9 @@ struct Args {
     port: u16,
 }
 
-async fn main_task(
-    etl: Etl,
-    receiver: AsyncReceiver<Message>,
-    emitter: AsyncSender<Message>,
-) -> eyre::Result<()> {
+async fn main_task(etl: Etl, receiver: AsyncReceiver<Message>) -> eyre::Result<()> {
     while let Ok(msg) = receiver.recv().await {
-        etl.process_message(msg, emitter.clone()).await?;
+        etl.process_message_from_mq(msg).await?;
     }
 
     eyre::bail!("Message queue receiver exited unexpectedly")
@@ -66,16 +61,18 @@ async fn main() -> eyre::Result<()> {
     } = Args::parse();
     log::info!("Binding port: {}", port);
 
-    let etl = Etl::new(&source, &sink, &job_manager)?;
     let msg_queue = MessageQueue::new(&Etl::id()).await?;
     let server = Server::new(port);
 
     let (input_sender, input_receiver) = kanal::unbounded_async();
     let (output_sender, output_receiver) = kanal::unbounded_async();
 
+    let etl = Etl::new(&source, &sink, &job_manager, output_sender)?;
+    etl.resume().await?;
+
     tokio::try_join!(
         msg_queue.run(input_sender.clone(), output_receiver),
-        main_task(etl, input_receiver, output_sender),
+        main_task(etl, input_receiver),
         server.run(input_sender.clone())
     )?;
 

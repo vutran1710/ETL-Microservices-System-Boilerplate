@@ -45,7 +45,7 @@ pub struct ChainIdFilter {
 
 // Implement RowStream for Transaction -------------------------------------------------------
 impl RowStream for Action {
-    fn query_range(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>> {
+    fn query(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>> {
         if let Range::Numeric {
             from: from_block_number,
             to: to_block_number,

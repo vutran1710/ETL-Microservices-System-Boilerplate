@@ -2,7 +2,7 @@ mod __etl_job_status;
 mod assets;
 mod query_interfaces;
 
-pub use __etl_job_status::EtlJobManager;
+pub use __etl_job_status::EtlJobStatus;
 pub use assets::Asset;
 pub use query_interfaces::*;
 

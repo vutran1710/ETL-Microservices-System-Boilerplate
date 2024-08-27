@@ -76,7 +76,7 @@ impl From<&BuySell> for RangeQuery {
 
 // Implement RowStream for BuySell -------------------------------------------------------
 impl RowStream for BuySell {
-    fn query_range(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>> {
+    fn query(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>> {
         use schemas::buy_sell::dsl::*;
         let user_filter: Filter = serde_json::from_value(query.filters.clone())?;
 

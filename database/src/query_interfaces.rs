@@ -5,8 +5,6 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Debug;
 
-use std::thread;
-
 /// Range is [from, to]: both are inclusive
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
@@ -25,8 +23,14 @@ pub enum Range {
     },
 }
 
+impl Default for Range {
+    fn default() -> Self {
+        Range::Numeric { from: 0, to: 0 }
+    }
+}
+
 impl Range {
-    fn validate(&self) -> bool {
+    pub fn validate(&self) -> bool {
         match self {
             Range::Numeric { from, to } => from <= to,
             Range::DateTime { from, to } => from <= to,
@@ -89,7 +93,7 @@ impl Range {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
 pub struct RangeQuery {
     pub range: Range,
     pub filters: serde_json::Value,
@@ -111,35 +115,9 @@ impl RangeQuery {
 }
 
 pub trait RowStream {
-    fn query_range(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>>
+    fn query(pool: &mut PgConnection, query: &RangeQuery) -> eyre::Result<Vec<Self>>
     where
         Self: Sized;
-
-    fn query(pool: &mut PgConnection, queries: &[RangeQuery]) -> eyre::Result<kanal::Receiver<Self>>
-    where
-        Self: Sized + Send + Clone + Sync + 'static,
-    {
-        let (send, receiver) = kanal::bounded(1);
-        for query in queries {
-            if !query.range.validate() {
-                log::error!("Invalid range: range={:?}", query.range);
-                continue;
-            }
-
-            let local_send = send.clone();
-            let rows = Self::query_range(pool, query)?;
-            log::info!("Get {} rows for query={:?}", rows.len(), query);
-            thread::spawn(move || {
-                for row in rows.iter() {
-                    if local_send.send(row.to_owned()).is_err() {
-                        break;
-                    }
-                }
-            });
-        }
-
-        Ok(receiver)
-    }
 }
 
 #[cfg(test)]
